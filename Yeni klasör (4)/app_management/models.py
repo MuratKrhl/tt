@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 
 class ServerType(models.Model):
     """Sunucu tipi modeli"""
@@ -34,7 +34,7 @@ class Server(models.Model):
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_servers')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_servers')
     
     def __str__(self):
         return f"{self.name} ({self.ip_address})"
@@ -66,7 +66,7 @@ class Application(models.Model):
     description = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_applications')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_applications')
     
     def __str__(self):
         return f"{self.name} ({self.application_type})"
@@ -84,7 +84,7 @@ class ApplicationLog(models.Model):
     log_type = models.CharField(max_length=20, choices=LOG_TYPE_CHOICES)
     message = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='application_logs')
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='application_logs')
     
     def __str__(self):
         return f"{self.application.name} - {self.log_type} - {self.timestamp}"
@@ -106,7 +106,7 @@ class MaintenanceRecord(models.Model):
     actual_start = models.DateTimeField(null=True, blank=True)
     actual_end = models.DateTimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_maintenance_records')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_maintenance_records')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -128,7 +128,7 @@ class ApplicationDocument(models.Model):
     document_type = models.CharField(max_length=20, choices=DOCUMENT_TYPE_CHOICES)
     file = models.FileField(upload_to='application_documents/')
     description = models.TextField(blank=True, null=True)
-    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='uploaded_documents')
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='uploaded_documents')
     uploaded_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
