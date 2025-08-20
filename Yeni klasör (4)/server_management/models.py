@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import User
+from django.conf import settings
 
 class ServerType(models.Model):
     """Sunucu türlerini tanımlar (Fiziksel, Sanal, Bulut, vb.)"""
@@ -45,7 +45,7 @@ class Server(models.Model):
     purchase_date = models.DateField(blank=True, null=True, verbose_name="Satın Alma Tarihi")
     warranty_expiry = models.DateField(blank=True, null=True, verbose_name="Garanti Bitiş Tarihi")
     notes = models.TextField(blank=True, null=True, verbose_name="Notlar")
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="created_servers", verbose_name="Oluşturan")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="created_servers", verbose_name="Oluşturan")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Oluşturulma Tarihi")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Güncellenme Tarihi")
     
@@ -87,9 +87,9 @@ class ServerMaintenanceRecord(models.Model):
     scheduled_date = models.DateTimeField(verbose_name="Planlanan Tarih")
     completed_date = models.DateTimeField(blank=True, null=True, verbose_name="Tamamlanma Tarihi")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled', verbose_name="Durum")
-    performed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="performed_server_maintenance", verbose_name="Gerçekleştiren")
+    performed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="performed_server_maintenance", verbose_name="Gerçekleştiren")
     notes = models.TextField(blank=True, null=True, verbose_name="Notlar")
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="created_server_maintenance", verbose_name="Oluşturan")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="created_server_maintenance", verbose_name="Oluşturan")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Oluşturulma Tarihi")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Güncellenme Tarihi")
     
@@ -132,7 +132,7 @@ class ServerMonitoringLog(models.Model):
     threshold = models.FloatField(blank=True, null=True, verbose_name="Eşik Değeri")
     message = models.TextField(verbose_name="Mesaj")
     resolved = models.BooleanField(default=False, verbose_name="Çözüldü")
-    resolved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="resolved_server_logs", verbose_name="Çözen")
+    resolved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="resolved_server_logs", verbose_name="Çözen")
     resolved_at = models.DateTimeField(blank=True, null=True, verbose_name="Çözülme Zamanı")
     
     def __str__(self):
@@ -166,7 +166,7 @@ class ServerDocument(models.Model):
     document_type = models.CharField(max_length=50, choices=DOCUMENT_TYPE_CHOICES, verbose_name="Belge Türü")
     file = models.FileField(upload_to='server_documents/', verbose_name="Dosya")
     description = models.TextField(blank=True, null=True, verbose_name="Açıklama")
-    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="uploaded_server_documents", verbose_name="Yükleyen")
+    uploaded_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="uploaded_server_documents", verbose_name="Yükleyen")
     uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name="Yüklenme Tarihi")
     
     def __str__(self):
