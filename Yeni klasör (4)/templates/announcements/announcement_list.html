@@ -1,0 +1,370 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Duyurular{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0 d-flex justify-content-between align-items-center">
+                    <h6>Tüm Duyurular</h6>
+                    {% if perms.announcements.add_announcement %}
+                    <a href="{% url 'announcement_create' %}" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#announcementModal">
+                        <i class="fas fa-plus"></i> Yeni Duyuru / Çalışma
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtreleme Bölümü -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header pb-0">
+                    <h6><i class="fas fa-filter me-2"></i> Filtreleme</h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" action="{% url 'announcement_list' %}" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="{{ filter_form.title.id_for_label }}" class="form-label">Başlık</label>
+                            {{ filter_form.title|safe }}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ filter_form.announcement_type.id_for_label }}" class="form-label">Tür</label>
+                            {{ filter_form.announcement_type|safe }}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ filter_form.priority.id_for_label }}" class="form-label">Öncelik</label>
+                            {{ filter_form.priority|safe }}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ filter_form.product.id_for_label }}" class="form-label">Ürün</label>
+                            {{ filter_form.product|safe }}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ filter_form.status.id_for_label }}" class="form-label">Durum</label>
+                            {{ filter_form.status|safe }}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ filter_form.tags.id_for_label }}" class="form-label">Etiketler</label>
+                            {{ filter_form.tags|safe }}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ filter_form.date_from.id_for_label }}" class="form-label">Başlangıç Tarihi</label>
+                            {{ filter_form.date_from|safe }}
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ filter_form.date_to.id_for_label }}" class="form-label">Bitiş Tarihi</label>
+                            {{ filter_form.date_to|safe }}
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2"><i class="fas fa-search me-2"></i> Filtrele</button>
+                            <a href="{% url 'announcement_list' %}" class="btn btn-outline-secondary"><i class="fas fa-times me-2"></i> Temizle</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Duyuru Listesi -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0">
+                    <h6><i class="fas fa-list me-2"></i> Duyuru Listesi</h6>
+                </div>
+                <div class="card-body px-0 pt-0 pb-2">
+                    <div class="table-responsive p-0">
+                        <table class="table align-items-center mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Başlık</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Tür</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Öncelik</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Ürün</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Durum</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Tarih</th>
+                                    <th class="text-secondary opacity-7"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for announcement in page_obj %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex px-2 py-1">
+                                            <div>
+                                                {% if announcement.announcement_type == 'announcement' %}
+                                                <i class="fas fa-bullhorn text-primary me-3"></i>
+                                                {% elif announcement.announcement_type == 'planned_work' %}
+                                                <i class="fas fa-calendar-alt text-info me-3"></i>
+                                                {% else %}
+                                                <i class="fas fa-info-circle text-success me-3"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div class="d-flex flex-column justify-content-center">
+                                                <h6 class="mb-0 text-sm">
+                                                    {% if announcement.pinned %}
+                                                    <i class="fas fa-thumbtack text-warning me-1" data-bs-toggle="tooltip" title="Sabitlenmiş"></i>
+                                                    {% endif %}
+                                                    {{ announcement.title }}
+                                                </h6>
+                                                <p class="text-xs text-secondary mb-0">{{ announcement.author.get_full_name|default:announcement.author.username }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-sm bg-gradient-{{ announcement.get_type_badge }}">
+                                            {{ announcement.get_announcement_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-sm bg-gradient-{{ announcement.get_priority_color }}">
+                                            {{ announcement.get_priority_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <p class="text-xs font-weight-bold mb-0">{{ announcement.product }}</p>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-sm bg-gradient-{{ announcement.get_status_badge }}">
+                                            {{ announcement.get_status_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <p class="text-xs text-secondary mb-0">{{ announcement.start_date|date:"d.m.Y" }}</p>
+                                    </td>
+                                    <td class="align-middle">
+                                        <a href="{% url 'announcement_detail' announcement.id %}" class="btn btn-link text-secondary mb-0">
+                                            <i class="fas fa-eye" data-bs-toggle="tooltip" title="Görüntüle"></i>
+                                        </a>
+                                        {% if perms.announcements.change_announcement %}
+                                        <a href="{% url 'announcement_update' announcement.id %}" class="btn btn-link text-secondary mb-0" data-bs-toggle="modal" data-bs-target="#announcementModal">
+                                            <i class="fas fa-edit" data-bs-toggle="tooltip" title="Düzenle"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if perms.announcements.delete_announcement %}
+                                        <a href="#" class="btn btn-link text-danger mb-0" data-bs-toggle="modal" data-bs-target="#deleteModal{{ announcement.id }}">
+                                            <i class="fas fa-trash" data-bs-toggle="tooltip" title="Sil"></i>
+                                        </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                
+                                <!-- Silme Onay Modalı -->
+                                <div class="modal fade" id="deleteModal{{ announcement.id }}" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel{{ announcement.id }}" aria-hidden="true">
+                                    <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteModalLabel{{ announcement.id }}">Duyuru Silme Onayı</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <p>"{{ announcement.title }}" başlıklı duyuruyu silmek istediğinizden emin misiniz?</p>
+                                                <p class="text-danger">Bu işlem geri alınamaz!</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                                                <form action="{% url 'announcement_delete' announcement.id %}" method="post" style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-danger">Sil</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <p class="text-secondary mb-0">Arama kriterlerinize uygun duyuru bulunamadı.</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sayfalama -->
+    {% if page_obj.has_other_pages %}
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="First">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                    <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Last">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Duyuru Oluşturma/Düzenleme Modal -->
+<div class="modal fade" id="announcementModal" tabindex="-1" role="dialog" aria-labelledby="announcementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="announcementModalLabel">Duyuru / Çalışma</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent">
+                    <div class="text-center p-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Yükleniyor...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Tooltips'i etkinleştir
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+        
+        // Modal açıldığında form içeriğini yükle
+        $('#announcementModal').on('show.bs.modal', function (e) {
+            var url = $(e.relatedTarget).attr('href') || '{% url "announcement_create" %}?modal=true';
+            $('#modalContent').load(url, function() {
+                // CKEditor'ü başlat
+                if (typeof CKEDITOR !== 'undefined') {
+                    CKEDITOR.replace('id_content');
+                }
+                
+                // DateTimePicker'ı başlat
+                $('.datetimepicker').datetimepicker({
+                    format: 'DD.MM.YYYY HH:mm',
+                    locale: 'tr',
+                    icons: {
+                        time: "fa fa-clock",
+                        date: "fa fa-calendar",
+                        up: "fa fa-chevron-up",
+                        down: "fa fa-chevron-down",
+                        previous: 'fa fa-chevron-left',
+                        next: 'fa fa-chevron-right',
+                        today: 'fa fa-screenshot',
+                        clear: 'fa fa-trash',
+                        close: 'fa fa-remove'
+                    }
+                });
+            });
+        });
+        
+        // Form gönderimi
+        $(document).on('submit', '#announcementForm', function(e) {
+            e.preventDefault();
+            
+            // CKEditor içeriğini güncelle
+            if (typeof CKEDITOR !== 'undefined') {
+                for (instance in CKEDITOR.instances) {
+                    CKEDITOR.instances[instance].updateElement();
+                }
+            }
+            
+            var formData = new FormData(this);
+            
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    $('#announcementModal').modal('hide');
+                    
+                    // Başarılı mesajı göster
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Başarılı!',
+                        text: response.message,
+                        confirmButtonText: 'Tamam'
+                    }).then((result) => {
+                        // Sayfayı yenile veya yönlendir
+                        if (response.redirect_url) {
+                            window.location.href = response.redirect_url;
+                        } else {
+                            window.location.reload();
+                        }
+                    });
+                },
+                error: function(xhr) {
+                    var errors = JSON.parse(xhr.responseJSON.errors);
+                    var errorMessage = '';
+                    
+                    // Hata mesajlarını birleştir
+                    $.each(errors, function(field, messages) {
+                        $.each(messages, function(index, message) {
+                            errorMessage += field + ': ' + message + '<br>';
+                        });
+                    });
+                    
+                    // Hata mesajını göster
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Hata!',
+                        html: errorMessage,
+                        confirmButtonText: 'Tamam'
+                    });
+                }
+            });
+        });
+        
+        // Tarih filtreleme için datepicker
+        $('.datepicker').datepicker({
+            format: 'dd.mm.yyyy',
+            language: 'tr',
+            autoclose: true,
+            todayHighlight: true
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,471 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Sertifika Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-stats {
+        display: flex;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+    
+    .stat-card {
+        flex: 1;
+        min-width: 200px;
+        margin-right: 15px;
+        margin-bottom: 15px;
+        padding: 15px;
+        border-radius: 4px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+    }
+    
+    .stat-card h3 {
+        margin-top: 0;
+        margin-bottom: 5px;
+        font-size: 16px;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+    }
+    
+    .stat-active {
+        background-color: #f6ffed;
+        border: 1px solid #b7eb8f;
+    }
+    
+    .stat-expiring {
+        background-color: #fffbe6;
+        border: 1px solid #ffe58f;
+    }
+    
+    .stat-expired {
+        background-color: #fff1f0;
+        border: 1px solid #ffa39e;
+    }
+    
+    .stat-total {
+        background-color: #e6f7ff;
+        border: 1px solid #91d5ff;
+    }
+    
+    .chart-container {
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    
+    .recent-list {
+        margin-top: 10px;
+    }
+    
+    .recent-item {
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        background-color: #f5f5f5;
+        border-left: 4px solid #1890ff;
+    }
+    
+    .recent-item-success {
+        border-left-color: #52c41a;
+    }
+    
+    .recent-item-warning {
+        border-left-color: #faad14;
+    }
+    
+    .recent-item-error {
+        border-left-color: #f5222d;
+    }
+    
+    .recent-item-info {
+        border-left-color: #1890ff;
+    }
+    
+    .recent-item-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+    }
+    
+    .recent-item-title {
+        font-weight: bold;
+    }
+    
+    .recent-item-date {
+        color: #8c8c8c;
+        font-size: 12px;
+    }
+    
+    /* Dark theme adjustments */
+    .dark-theme .stat-active {
+        background-color: #162312;
+        border: 1px solid #3c8618;
+    }
+    
+    .dark-theme .stat-expiring {
+        background-color: #2b2111;
+        border: 1px solid #d89614;
+    }
+    
+    .dark-theme .stat-expired {
+        background-color: #2a1215;
+        border: 1px solid #a8071a;
+    }
+    
+    .dark-theme .stat-total {
+        background-color: #111d2c;
+        border: 1px solid #177ddc;
+    }
+    
+    .dark-theme .recent-item {
+        background-color: #1f1f1f;
+    }
+    
+    .dark-theme .recent-item-date {
+        color: #bfbfbf;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ant-page-header">
+    <div class="ant-page-header-heading">
+        <div class="ant-page-header-heading-left">
+            <span class="ant-page-header-heading-title">Sertifika Dashboard</span>
+        </div>
+        <div class="ant-page-header-heading-extra">
+            <a href="{% url 'certificate_management:certificate_list' %}" class="ant-btn ant-btn-primary">
+                <i class="fas fa-list"></i> Sertifika Listesi
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- İstatistikler -->
+<div class="dashboard-stats">
+    <div class="stat-card stat-total">
+        <h3>Toplam Sertifika</h3>
+        <div class="stat-value" id="total-certificates">{{ status_counts|length }}</div>
+    </div>
+    
+    {% for status in status_counts %}
+        {% if status.status == 'active' %}
+        <div class="stat-card stat-active">
+            <h3>Aktif Sertifika</h3>
+            <div class="stat-value">{{ status.count }}</div>
+        </div>
+        {% elif status.status == 'expiring_soon' %}
+        <div class="stat-card stat-expiring">
+            <h3>Yakında Dolacak</h3>
+            <div class="stat-value">{{ status.count }}</div>
+        </div>
+        {% elif status.status == 'expired' %}
+        <div class="stat-card stat-expired">
+            <h3>Süresi Dolmuş</h3>
+            <div class="stat-value">{{ status.count }}</div>
+        </div>
+        {% endif %}
+    {% endfor %}
+</div>
+
+<div class="ant-row">
+    <!-- Sertifika Durumu Grafiği -->
+    <div class="ant-col ant-col-24 ant-col-lg-12" style="padding-right: 10px;">
+        <div class="ant-card">
+            <div class="ant-card-head">
+                <div class="ant-card-head-title">Sertifika Durumu</div>
+            </div>
+            <div class="ant-card-body">
+                <div id="status-chart" class="chart-container"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sertifika Tipi Grafiği -->
+    <div class="ant-col ant-col-24 ant-col-lg-12" style="padding-left: 10px;">
+        <div class="ant-card">
+            <div class="ant-card-head">
+                <div class="ant-card-head-title">Sertifika Tipi</div>
+            </div>
+            <div class="ant-card-body">
+                <div id="type-chart" class="chart-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="ant-row" style="margin-top: 20px;">
+    <!-- Sona Erme Tarihi Grafiği -->
+    <div class="ant-col ant-col-24 ant-col-lg-12" style="padding-right: 10px;">
+        <div class="ant-card">
+            <div class="ant-card-head">
+                <div class="ant-card-head-title">Sona Erme Tarihi</div>
+            </div>
+            <div class="ant-card-body">
+                <div id="expiry-chart" class="chart-container"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sunucu Başına Sertifika Sayısı -->
+    <div class="ant-col ant-col-24 ant-col-lg-12" style="padding-left: 10px;">
+        <div class="ant-card">
+            <div class="ant-card-head">
+                <div class="ant-card-head-title">Sunucu Başına Sertifika</div>
+            </div>
+            <div class="ant-card-body">
+                <div id="server-chart" class="chart-container"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="ant-row" style="margin-top: 20px;">
+    <!-- Son Eklenen/Güncellenen Sertifikalar -->
+    <div class="ant-col ant-col-24 ant-col-lg-12" style="padding-right: 10px;">
+        <div class="ant-card">
+            <div class="ant-card-head">
+                <div class="ant-card-head-title">Son Eklenen/Güncellenen Sertifikalar</div>
+            </div>
+            <div class="ant-card-body">
+                <div class="recent-list">
+                    {% for cert in recent_certificates %}
+                    <div class="recent-item recent-item-{% if cert.status == 'active' %}success{% elif cert.status == 'expiring_soon' %}warning{% elif cert.status == 'expired' %}error{% else %}info{% endif %}">
+                        <div class="recent-item-header">
+                            <div class="recent-item-title">{{ cert.certificate_name }}</div>
+                            <div class="recent-item-date">{{ cert.updated_at|date:"d.m.Y H:i" }}</div>
+                        </div>
+                        <div>{{ cert.domain }} - {{ cert.server_name }}</div>
+                    </div>
+                    {% empty %}
+                    <div>Henüz sertifika bulunmuyor.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Son Senkronizasyon İşlemleri -->
+    <div class="ant-col ant-col-24 ant-col-lg-12" style="padding-left: 10px;">
+        <div class="ant-card">
+            <div class="ant-card-head">
+                <div class="ant-card-head-title">Son Senkronizasyon İşlemleri</div>
+            </div>
+            <div class="ant-card-body">
+                <div class="recent-list">
+                    {% for sync in recent_syncs %}
+                    <div class="recent-item recent-item-{% if sync.status == 'success' %}success{% elif sync.status == 'partial' %}warning{% elif sync.status == 'failed' %}error{% else %}info{% endif %}">
+                        <div class="recent-item-header">
+                            <div class="recent-item-title">{{ sync.get_sync_type_display }} - {{ sync.server_name }}</div>
+                            <div class="recent-item-date">{{ sync.started_at|date:"d.m.Y H:i" }}</div>
+                        </div>
+                        <div>
+                            {% if sync.application_name %}{{ sync.application_name }} - {% endif %}
+                            {{ sync.get_status_display }} 
+                            ({{ sync.certificates_found }} bulundu, {{ sync.certificates_added }} eklendi, {{ sync.certificates_updated }} güncellendi)
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div>Henüz senkronizasyon işlemi bulunmuyor.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js kütüphanesi -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const isDarkTheme = document.body.classList.contains('dark-theme');
+        const textColor = isDarkTheme ? '#ffffff' : '#000000';
+        const gridColor = isDarkTheme ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+        
+        // Grafik renkleri
+        const colors = {
+            active: '#52c41a',
+            expiring_soon: '#faad14',
+            expired: '#f5222d',
+            revoked: '#8c8c8c',
+            kdb: '#1890ff',
+            java: '#722ed1',
+            pem: '#eb2f96',
+            '30_days': '#f5222d',
+            '60_days': '#faad14',
+            '90_days': '#52c41a',
+            'expired': '#8c8c8c'
+        };
+        
+        // Grafik ayarları
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: textColor
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: gridColor
+                    },
+                    ticks: {
+                        color: textColor
+                    }
+                },
+                x: {
+                    grid: {
+                        color: gridColor
+                    },
+                    ticks: {
+                        color: textColor
+                    }
+                }
+            }
+        };
+        
+        // Sertifika Durumu Grafiği
+        const statusData = {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: [],
+                borderColor: [],
+                borderWidth: 1
+            }]
+        };
+        
+        {% for status in status_counts %}
+        statusData.labels.push('{{ status.status|capfirst }}');
+        statusData.datasets[0].data.push({{ status.count }});
+        statusData.datasets[0].backgroundColor.push(colors['{{ status.status }}']);
+        statusData.datasets[0].borderColor.push(colors['{{ status.status }}']);
+        {% endfor %}
+        
+        const statusCtx = document.getElementById('status-chart').getContext('2d');
+        const statusChart = new Chart(statusCtx, {
+            type: 'doughnut',
+            data: statusData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: textColor
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Sertifika Tipi Grafiği
+        const typeData = {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: [],
+                borderColor: [],
+                borderWidth: 1
+            }]
+        };
+        
+        {% for type in type_counts %}
+        typeData.labels.push('{{ type.certificate_type }}');
+        typeData.datasets[0].data.push({{ type.count }});
+        typeData.datasets[0].backgroundColor.push(colors['{{ type.certificate_type|lower }}']);
+        typeData.datasets[0].borderColor.push(colors['{{ type.certificate_type|lower }}']);
+        {% endfor %}
+        
+        const typeCtx = document.getElementById('type-chart').getContext('2d');
+        const typeChart = new Chart(typeCtx, {
+            type: 'pie',
+            data: typeData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: textColor
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Sona Erme Tarihi Grafiği
+        const expiryData = {
+            labels: ['30 Gün İçinde', '30-60 Gün', '60-90 Gün', 'Süresi Dolmuş'],
+            datasets: [{
+                label: 'Sertifika Sayısı',
+                data: [
+                    {{ expiry_counts.30_days }},
+                    {{ expiry_counts.60_days }},
+                    {{ expiry_counts.90_days }},
+                    {{ expiry_counts.expired }}
+                ],
+                backgroundColor: [
+                    colors['30_days'],
+                    colors['60_days'],
+                    colors['90_days'],
+                    colors['expired']
+                ],
+                borderColor: [
+                    colors['30_days'],
+                    colors['60_days'],
+                    colors['90_days'],
+                    colors['expired']
+                ],
+                borderWidth: 1
+            }]
+        };
+        
+        const expiryCtx = document.getElementById('expiry-chart').getContext('2d');
+        const expiryChart = new Chart(expiryCtx, {
+            type: 'bar',
+            data: expiryData,
+            options: chartOptions
+        });
+        
+        // Sunucu Başına Sertifika Sayısı Grafiği
+        const serverData = {
+            labels: [],
+            datasets: [{
+                label: 'Sertifika Sayısı',
+                data: [],
+                backgroundColor: '#1890ff',
+                borderColor: '#1890ff',
+                borderWidth: 1
+            }]
+        };
+        
+        {% for server in server_counts %}
+        serverData.labels.push('{{ server.server_name }}');
+        serverData.datasets[0].data.push({{ server.count }});
+        {% endfor %}
+        
+        const serverCtx = document.getElementById('server-chart').getContext('2d');
+        const serverChart = new Chart(serverCtx, {
+            type: 'bar',
+            data: serverData,
+            options: chartOptions
+        });
+    });
+</script>
+{% endblock %}

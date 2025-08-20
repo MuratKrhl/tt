@@ -1,0 +1,462 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Nöbet Listesi Dışa Aktar" %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'vendor/select2/select2.min.css' %}">
+<link rel="stylesheet" href="{% static 'vendor/daterangepicker/daterangepicker.css' %}">
+<style>
+    .export-option {
+        border: 1px solid #e3e6f0;
+        border-radius: 0.35rem;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .export-option:hover {
+        border-color: #4e73df;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    }
+    
+    .export-option.selected {
+        border-color: #4e73df;
+        background-color: #f8f9fc;
+        box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    }
+    
+    .export-option i {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    .export-option.excel i {
+        color: #1D6F42;
+    }
+    
+    .export-option.csv i {
+        color: #4285F4;
+    }
+    
+    .export-option.pdf i {
+        color: #DB4437;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Başlık -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{% trans "Nöbet Listesi Dışa Aktar" %}</h1>
+        <a href="{% url 'shift_list_view' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50 mr-1"></i> {% trans "Nöbet Listelerine Dön" %}
+        </a>
+    </div>
+
+    <!-- Form Kartı -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Dışa Aktarma Seçenekleri" %}</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" id="exportForm">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Dışa Aktarma Formatı -->
+                <div class="form-group">
+                    <label>{% trans "Format" %}</label>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="export-option excel text-center" data-format="excel">
+                                <i class="far fa-file-excel"></i>
+                                <h5>{% trans "Excel" %}</h5>
+                                <p class="text-muted">{% trans "Microsoft Excel formatında (.xlsx)" %}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="export-option csv text-center" data-format="csv">
+                                <i class="far fa-file-alt"></i>
+                                <h5>{% trans "CSV" %}</h5>
+                                <p class="text-muted">{% trans "Virgülle ayrılmış değerler (.csv)" %}</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="export-option pdf text-center" data-format="pdf">
+                                <i class="far fa-file-pdf"></i>
+                                <h5>{% trans "PDF" %}</h5>
+                                <p class="text-muted">{% trans "Taşınabilir belge formatı (.pdf)" %}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {{ form.format }}
+                    {% if form.format.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.format.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Nöbet Listesi Seçimi -->
+                <div class="form-group">
+                    <label for="{{ form.shift_list.id_for_label }}">{% trans "Nöbet Listesi" %}</label>
+                    {{ form.shift_list }}
+                    {% if form.shift_list.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.shift_list.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if form.shift_list.help_text %}
+                    <small class="form-text text-muted">{{ form.shift_list.help_text }}</small>
+                    {% endif %}
+                </div>
+                
+                <!-- Bölüm Seçimi -->
+                <div class="form-group">
+                    <label for="{{ form.department.id_for_label }}">{% trans "Bölüm" %}</label>
+                    {{ form.department }}
+                    {% if form.department.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.department.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if form.department.help_text %}
+                    <small class="form-text text-muted">{{ form.department.help_text }}</small>
+                    {% endif %}
+                </div>
+                
+                <!-- Tarih Aralığı -->
+                <div class="form-group">
+                    <label for="{{ form.date_range.id_for_label }}">{% trans "Tarih Aralığı" %}</label>
+                    {{ form.date_range }}
+                    {% if form.date_range.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.date_range.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if form.date_range.help_text %}
+                    <small class="form-text text-muted">{{ form.date_range.help_text }}</small>
+                    {% endif %}
+                </div>
+                
+                <!-- Doktor Seçimi -->
+                <div class="form-group">
+                    <label for="{{ form.doctors.id_for_label }}">{% trans "Doktorlar" %}</label>
+                    {{ form.doctors }}
+                    {% if form.doctors.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.doctors.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if form.doctors.help_text %}
+                    <small class="form-text text-muted">{{ form.doctors.help_text }}</small>
+                    {% endif %}
+                </div>
+                
+                <!-- İçerik Seçenekleri -->
+                <div class="form-group">
+                    <label>{% trans "İçerik Seçenekleri" %}</label>
+                    <div class="custom-control custom-checkbox">
+                        {{ form.include_contact_info }}
+                        <label class="custom-control-label" for="{{ form.include_contact_info.id_for_label }}">
+                            {% trans "İletişim Bilgilerini Dahil Et" %}
+                        </label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                        {{ form.mask_phone_numbers }}
+                        <label class="custom-control-label" for="{{ form.mask_phone_numbers.id_for_label }}">
+                            {% trans "Telefon Numaralarını Maskele" %}
+                        </label>
+                    </div>
+                    <div class="custom-control custom-checkbox">
+                        {{ form.include_header_footer }}
+                        <label class="custom-control-label" for="{{ form.include_header_footer.id_for_label }}">
+                            {% trans "Başlık ve Altbilgi Ekle" %}
+                        </label>
+                    </div>
+                    {% if form.include_contact_info.errors or form.mask_phone_numbers.errors or form.include_header_footer.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.include_contact_info.errors %}
+                        {{ error }}
+                        {% endfor %}
+                        {% for error in form.mask_phone_numbers.errors %}
+                        {{ error }}
+                        {% endfor %}
+                        {% for error in form.include_header_footer.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- PDF Seçenekleri (sadece PDF seçildiğinde gösterilir) -->
+                <div class="form-group pdf-options" style="display: none;">
+                    <label>{% trans "PDF Seçenekleri" %}</label>
+                    <div class="form-row">
+                        <div class="col-md-6">
+                            <label for="{{ form.page_size.id_for_label }}">{% trans "Sayfa Boyutu" %}</label>
+                            {{ form.page_size }}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.orientation.id_for_label }}">{% trans "Yönlendirme" %}</label>
+                            {{ form.orientation }}
+                        </div>
+                    </div>
+                    {% if form.page_size.errors or form.orientation.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.page_size.errors %}
+                        {{ error }}
+                        {% endfor %}
+                        {% for error in form.orientation.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group text-right">
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='{% url "shift_list_view" %}'">
+                        {% trans "İptal" %}
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-download mr-1"></i> {% trans "Dışa Aktar" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/select2/select2.min.js' %}"></script>
+<script src="{% static 'vendor/daterangepicker/moment.min.js' %}"></script>
+<script src="{% static 'vendor/daterangepicker/daterangepicker.js' %}"></script>
+<script src="{% static 'vendor/sweetalert2/sweetalert2.all.min.js' %}"></script>
+
+<script>
+    $(document).ready(function() {
+        // Form alanlarını düzenle
+        $('#{{ form.format.id_for_label }}').hide(); // Gizli input
+        $('#{{ form.shift_list.id_for_label }}').addClass('form-control select2');
+        $('#{{ form.department.id_for_label }}').addClass('form-control select2');
+        $('#{{ form.date_range.id_for_label }}').addClass('form-control');
+        $('#{{ form.doctors.id_for_label }}').addClass('form-control select2');
+        $('#{{ form.include_contact_info.id_for_label }}').addClass('custom-control-input');
+        $('#{{ form.mask_phone_numbers.id_for_label }}').addClass('custom-control-input');
+        $('#{{ form.include_header_footer.id_for_label }}').addClass('custom-control-input');
+        $('#{{ form.page_size.id_for_label }}').addClass('form-control');
+        $('#{{ form.orientation.id_for_label }}').addClass('form-control');
+
+        // Select2 inicializasyonu
+        $('.select2').select2({
+            placeholder: "{% trans 'Seçiniz...' %}",
+            allowClear: true
+        });
+
+        // DateRangePicker inicializasyonu
+        $('#{{ form.date_range.id_for_label }}').daterangepicker({
+            autoUpdateInput: false,
+            locale: {
+                format: 'YYYY-MM-DD',
+                applyLabel: '{% trans "Uygula" %}',
+                cancelLabel: '{% trans "İptal" %}',
+                daysOfWeek: ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'],
+                monthNames: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'],
+                firstDay: 1
+            }
+        });
+
+        $('#{{ form.date_range.id_for_label }}').on('apply.daterangepicker', function(ev, picker) {
+            $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
+        });
+
+        $('#{{ form.date_range.id_for_label }}').on('cancel.daterangepicker', function(ev, picker) {
+            $(this).val('');
+        });
+
+        // Format seçimi
+        $('.export-option').on('click', function() {
+            $('.export-option').removeClass('selected');
+            $(this).addClass('selected');
+            var format = $(this).data('format');
+            $('#{{ form.format.id_for_label }}').val(format);
+            
+            // PDF seçeneklerini göster/gizle
+            if (format === 'pdf') {
+                $('.pdf-options').slideDown();
+            } else {
+                $('.pdf-options').slideUp();
+            }
+        });
+
+        // Varsayılan olarak Excel'i seç
+        $('.export-option[data-format="excel"]').click();
+
+        // Nöbet listesi seçildiğinde bölüm ve tarih aralığını otomatik doldur
+        $('#{{ form.shift_list.id_for_label }}').on('change', function() {
+            var shiftListId = $(this).val();
+            if (shiftListId) {
+                $.ajax({
+                    url: '{% url "api_shift_list_info" %}',
+                    type: 'GET',
+                    data: { 'shift_list_id': shiftListId },
+                    dataType: 'json',
+                    success: function(data) {
+                        // Bölüm seçimini güncelle
+                        if (data.department_id) {
+                            $('#{{ form.department.id_for_label }}').val(data.department_id).trigger('change');
+                        }
+                        
+                        // Tarih aralığını güncelle
+                        if (data.start_date && data.end_date) {
+                            $('#{{ form.date_range.id_for_label }}').val(data.start_date + ' - ' + data.end_date);
+                        }
+                    },
+                    error: function() {
+                        console.error('Nöbet listesi bilgileri alınamadı.');
+                    }
+                });
+            }
+        });
+
+        // Form gönderimi
+        $('#exportForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            // Format seçildi mi kontrol et
+            if (!$('#{{ form.format.id_for_label }}').val()) {
+                Swal.fire({
+                    title: '{% trans "Uyarı!" %}',
+                    text: '{% trans "Lütfen bir dışa aktarma formatı seçin." %}',
+                    icon: 'warning',
+                    confirmButtonText: '{% trans "Tamam" %}'
+                });
+                return;
+            }
+            
+            // Nöbet listesi veya bölüm seçildi mi kontrol et
+            if (!$('#{{ form.shift_list.id_for_label }}').val() && !$('#{{ form.department.id_for_label }}').val()) {
+                Swal.fire({
+                    title: '{% trans "Uyarı!" %}',
+                    text: '{% trans "Lütfen bir nöbet listesi veya bölüm seçin." %}',
+                    icon: 'warning',
+                    confirmButtonText: '{% trans "Tamam" %}'
+                });
+                return;
+            }
+            
+            // Telefon maskeleme seçeneği, iletişim bilgileri dahil edilmediğinde devre dışı bırakılmalı
+            if ($('#{{ form.mask_phone_numbers.id_for_label }}').prop('checked') && 
+                !$('#{{ form.include_contact_info.id_for_label }}').prop('checked')) {
+                Swal.fire({
+                    title: '{% trans "Uyarı!" %}',
+                    text: '{% trans "Telefon numaralarını maskelemek için iletişim bilgilerini dahil etmelisiniz." %}',
+                    icon: 'warning',
+                    confirmButtonText: '{% trans "Tamam" %}'
+                });
+                return;
+            }
+            
+            // Form verilerini al
+            var formData = $(this).serialize();
+            
+            // Dışa aktarma işlemi başlat
+            Swal.fire({
+                title: '{% trans "Dışa Aktarılıyor..." %}',
+                text: '{% trans "Nöbet listesi dışa aktarılıyor, lütfen bekleyin." %}',
+                icon: 'info',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                onBeforeOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // AJAX ile dışa aktarma isteği gönder
+            $.ajax({
+                url: '{% url "export_shift_list" %}',
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        // Dosya indirme bağlantısını oluştur ve tıkla
+                        var downloadLink = document.createElement('a');
+                        downloadLink.href = response.file_url;
+                        downloadLink.download = response.file_name;
+                        document.body.appendChild(downloadLink);
+                        downloadLink.click();
+                        document.body.removeChild(downloadLink);
+                        
+                        Swal.fire({
+                            title: '{% trans "Başarılı!" %}',
+                            text: '{% trans "Nöbet listesi başarıyla dışa aktarıldı." %}',
+                            icon: 'success',
+                            confirmButtonText: '{% trans "Tamam" %}'
+                        });
+                    } else {
+                        Swal.fire({
+                            title: '{% trans "Hata!" %}',
+                            text: response.error || '{% trans "Dışa aktarma işlemi sırasında bir hata oluştu." %}',
+                            icon: 'error',
+                            confirmButtonText: '{% trans "Tamam" %}'
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    var errorMessage = '{% trans "Dışa aktarma işlemi sırasında bir hata oluştu." %}';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMessage = xhr.responseJSON.error;
+                    }
+                    
+                    Swal.fire({
+                        title: '{% trans "Hata!" %}',
+                        text: errorMessage,
+                        icon: 'error',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    });
+                }
+            });
+        });
+        
+        // İletişim bilgileri dahil edilmediğinde telefon maskeleme seçeneğini devre dışı bırak
+        $('#{{ form.include_contact_info.id_for_label }}').on('change', function() {
+            if (!$(this).prop('checked')) {
+                $('#{{ form.mask_phone_numbers.id_for_label }}').prop('checked', false);
+                $('#{{ form.mask_phone_numbers.id_for_label }}').prop('disabled', true);
+            } else {
+                $('#{{ form.mask_phone_numbers.id_for_label }}').prop('disabled', false);
+            }
+        });
+        
+        // Sayfa yüklendiğinde iletişim bilgileri durumuna göre telefon maskeleme seçeneğini ayarla
+        if (!$('#{{ form.include_contact_info.id_for_label }}').prop('checked')) {
+            $('#{{ form.mask_phone_numbers.id_for_label }}').prop('checked', false);
+            $('#{{ form.mask_phone_numbers.id_for_label }}').prop('disabled', true);
+        }
+    });
+</script>
+{% endblock %}

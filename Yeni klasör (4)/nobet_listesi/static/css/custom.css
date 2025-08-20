@@ -1,0 +1,294 @@
+/* Nöbet Listesi Çözümü - Özel CSS Stilleri */
+
+/* Genel Stiller */
+.text-truncate-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cursor-pointer {
+    cursor: pointer;
+}
+
+/* Kart Stilleri */
+.card-stats .card-body {
+    padding: 1rem;
+}
+
+.card-stats .icon-box {
+    width: 64px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    font-size: 1.75rem;
+}
+
+.card-stats .stat-count {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.card-stats .stat-title {
+    font-size: 0.875rem;
+    color: #858796;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Tablo Stilleri */
+.table-actions {
+    white-space: nowrap;
+}
+
+.table-actions .btn {
+    margin: 0 0.125rem;
+}
+
+/* Form Stilleri */
+.form-group label.required:after {
+    content: " *";
+    color: #e74a3b;
+}
+
+.invalid-feedback {
+    display: block;
+}
+
+/* Dosya Yükleme Alanı */
+.dropzone {
+    border: 2px dashed #d1d3e2;
+    border-radius: 0.35rem;
+    padding: 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    background-color: #f8f9fc;
+}
+
+.dropzone.dragover {
+    border-color: #4e73df;
+    background-color: rgba(78, 115, 223, 0.1);
+}
+
+.dropzone .dz-message {
+    margin: 1rem 0;
+}
+
+.dropzone .dz-preview {
+    margin: 1rem;
+}
+
+/* JSON Editör */
+.json-editor {
+    height: 300px;
+    font-family: monospace;
+    font-size: 14px;
+    line-height: 1.5;
+    border: 1px solid #d1d3e2;
+    border-radius: 0.35rem;
+    padding: 0.5rem;
+}
+
+/* Durum Göstergeleri */
+.status-indicator {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+.status-active {
+    background-color: #1cc88a;
+}
+
+.status-inactive {
+    background-color: #e74a3b;
+}
+
+.status-pending {
+    background-color: #f6c23e;
+}
+
+/* Nöbet Listesi Detay Sayfası */
+.shift-calendar {
+    border: 1px solid #e3e6f0;
+    border-radius: 0.35rem;
+}
+
+.shift-calendar .calendar-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+    padding: 0.75rem;
+    font-weight: bold;
+    text-align: center;
+}
+
+.shift-calendar .calendar-body {
+    padding: 0.5rem;
+}
+
+.shift-calendar .calendar-day {
+    border: 1px solid #e3e6f0;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    margin: 0.25rem;
+    min-height: 100px;
+}
+
+.shift-calendar .day-header {
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+.shift-calendar .weekend {
+    background-color: #f8f9fc;
+}
+
+.shift-calendar .today {
+    background-color: rgba(78, 115, 223, 0.1);
+    border-color: #4e73df;
+}
+
+.shift-calendar .shift-item {
+    padding: 0.25rem 0.5rem;
+    margin-bottom: 0.25rem;
+    border-radius: 0.25rem;
+    font-size: 0.8rem;
+    background-color: #4e73df;
+    color: white;
+    cursor: pointer;
+}
+
+/* Doktor Kartları */
+.doctor-card {
+    transition: all 0.3s ease;
+}
+
+.doctor-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.doctor-card .doctor-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #fff;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.doctor-card .doctor-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.doctor-card .doctor-title {
+    font-size: 0.875rem;
+    color: #858796;
+    margin-bottom: 0.5rem;
+}
+
+.doctor-card .doctor-contact {
+    font-size: 0.8rem;
+}
+
+/* Veri Kaynağı Kartları */
+.data-source-card {
+    transition: all 0.3s ease;
+}
+
+.data-source-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.data-source-card .source-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.data-source-card .source-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.data-source-card .source-type {
+    font-size: 0.875rem;
+    color: #858796;
+    margin-bottom: 0.5rem;
+}
+
+.data-source-card .source-stats {
+    font-size: 0.8rem;
+}
+
+/* Yükleniyor Göstergesi */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-spinner {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Mobil Uyumluluk */
+@media (max-width: 768px) {
+    .card-stats .icon-box {
+        width: 48px;
+        height: 48px;
+        font-size: 1.5rem;
+    }
+    
+    .card-stats .stat-count {
+        font-size: 1.5rem;
+    }
+    
+    .table-responsive {
+        overflow-x: auto;
+    }
+    
+    .shift-calendar .calendar-day {
+        min-height: 80px;
+    }
+}
+
+/* Yazdırma Stilleri */
+@media print {
+    .sidebar, .topbar, .footer, .no-print {
+        display: none !important;
+    }
+    
+    .content-wrapper {
+        margin-left: 0 !important;
+    }
+    
+    .card {
+        break-inside: avoid;
+    }
+    
+    .table-responsive {
+        overflow-x: visible;
+    }
+}

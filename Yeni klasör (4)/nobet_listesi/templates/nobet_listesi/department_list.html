@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Bölüm Listesi" %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}">
+<style>
+    .badge-doctor-count {
+        background-color: #4e73df;
+        color: white;
+    }
+    
+    .status-active {
+        color: #1cc88a;
+    }
+    
+    .status-inactive {
+        color: #e74a3b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Başlık -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{% trans "Bölüm Listesi" %}</h1>
+        <a href="{% url 'department_create' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> {% trans "Yeni Bölüm Ekle" %}
+        </a>
+    </div>
+
+    <!-- Bölüm Listesi Kartı -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Bölümler" %}</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="departmentTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Bölüm Adı" %}</th>
+                            <th>{% trans "Kod" %}</th>
+                            <th>{% trans "Doktor Sayısı" %}</th>
+                            <th>{% trans "Açıklama" %}</th>
+                            <th>{% trans "Durum" %}</th>
+                            <th>{% trans "İşlemler" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for department in departments %}
+                        <tr>
+                            <td>{{ department.name }}</td>
+                            <td>{{ department.code|default:"-" }}</td>
+                            <td>
+                                <span class="badge badge-doctor-count">{{ department.doctor_count }}</span>
+                            </td>
+                            <td>{{ department.description|default:"-"|truncatechars:50 }}</td>
+                            <td>
+                                {% if department.is_active %}
+                                <span class="status-active"><i class="fas fa-check-circle mr-1"></i> {% trans "Aktif" %}</span>
+                                {% else %}
+                                <span class="status-inactive"><i class="fas fa-times-circle mr-1"></i> {% trans "Pasif" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'department_update' department.id %}" class="btn btn-primary btn-sm" title="{% trans 'Düzenle' %}">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-danger btn-sm delete-department" data-id="{{ department.id }}" data-name="{{ department.name }}" title="{% trans 'Sil' %}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">{% trans "Kayıtlı bölüm bulunamadı." %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Silme Onay Modalı -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">{% trans "Bölüm Sil" %}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>{% trans "Bu bölümü silmek istediğinizden emin misiniz?" %}</p>
+                <p><strong id="departmentNameToDelete"></strong></p>
+                <div id="doctorWarning" class="alert alert-warning" style="display: none;">
+                    <i class="fas fa-exclamation-triangle mr-1"></i> {% trans "Bu bölüme atanmış doktorlar var. Bölümü silmek, doktorların bölüm atamasını kaldıracaktır." %}
+                </div>
+                <p class="text-danger">{% trans "Bu işlem geri alınamaz ve bölüme ait nöbet listeleri etkilenebilir." %}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans "İptal" %}</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">{% trans "Sil" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+<script src="{% static 'vendor/sweetalert2/sweetalert2.all.min.js' %}"></script>
+
+<script>
+    $(document).ready(function() {
+        // DataTables inicializasyonu
+        var table = $('#departmentTable').DataTable({
+            language: {
+                url: '{% static "vendor/datatables/tr_TR.json" %}'
+            },
+            order: [[0, 'asc']],
+            columnDefs: [
+                { orderable: false, targets: 5 }
+            ]
+        });
+        
+        // Bölüm silme işlemi
+        $('.delete-department').on('click', function() {
+            var departmentId = $(this).data('id');
+            var departmentName = $(this).data('name');
+            var doctorCount = $(this).closest('tr').find('.badge-doctor-count').text();
+            
+            $('#departmentNameToDelete').text(departmentName);
+            
+            // Eğer bölümde doktor varsa uyarı göster
+            if (parseInt(doctorCount) > 0) {
+                $('#doctorWarning').show();
+            } else {
+                $('#doctorWarning').hide();
+            }
+            
+            $('#deleteModal').modal('show');
+            
+            $('#confirmDelete').off('click').on('click', function() {
+                $.ajax({
+                    url: '{% url "department_delete" 0 %}'.replace('0', departmentId),
+                    type: 'POST',
+                    data: {
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        $('#deleteModal').modal('hide');
+                        
+                        if (response.success) {
+                            Swal.fire({
+                                title: '{% trans "Başarılı!" %}',
+                                text: response.message,
+                                icon: 'success',
+                                confirmButtonText: '{% trans "Tamam" %}'
+                            }).then(function() {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                title: '{% trans "Hata!" %}',
+                                text: response.error || '{% trans "Silme işlemi sırasında bir hata oluştu." %}',
+                                icon: 'error',
+                                confirmButtonText: '{% trans "Tamam" %}'
+                            });
+                        }
+                    },
+                    error: function() {
+                        $('#deleteModal').modal('hide');
+                        
+                        Swal.fire({
+                            title: '{% trans "Hata!" %}',
+                            text: '{% trans "Silme işlemi sırasında bir hata oluştu." %}',
+                            icon: 'error',
+                            confirmButtonText: '{% trans "Tamam" %}'
+                        });
+                    }
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

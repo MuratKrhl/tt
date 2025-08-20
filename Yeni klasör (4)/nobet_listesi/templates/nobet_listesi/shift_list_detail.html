@@ -1,0 +1,597 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{{ shift_list.title }} - {% trans "Nöbet Listesi Detayı" %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}">
+<link rel="stylesheet" href="{% static 'vendor/select2/select2.min.css' %}">
+<link rel="stylesheet" href="{% static 'nobet_listesi/css/shift_list_detail.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Başlık ve Butonlar -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{{ shift_list.title }}</h1>
+        <div>
+            <a href="{% url 'shift_list_export' %}?id={{ shift_list.id }}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-file-export fa-sm text-white-50 mr-1"></i> {% trans "Dışa Aktar" %}
+            </a>
+            <a href="{% url 'shift_list_update' shift_list.id %}" class="btn btn-warning btn-sm">
+                <i class="fas fa-edit fa-sm text-white-50 mr-1"></i> {% trans "Düzenle" %}
+            </a>
+            <a href="#" class="btn btn-danger btn-sm" data-toggle="modal" data-target="#deleteModal">
+                <i class="fas fa-trash fa-sm text-white-50 mr-1"></i> {% trans "Sil" %}
+            </a>
+            <a href="{% url 'shift_list_view' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-arrow-left fa-sm text-white-50 mr-1"></i> {% trans "Listeye Dön" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Nöbet Listesi Bilgileri -->
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Nöbet Listesi Bilgileri" %}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <tbody>
+                                <tr>
+                                    <th>{% trans "Başlık" %}</th>
+                                    <td>{{ shift_list.title }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Bölüm" %}</th>
+                                    <td>{{ shift_list.department.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Başlangıç Tarihi" %}</th>
+                                    <td>{{ shift_list.start_date|date:"d.m.Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Bitiş Tarihi" %}</th>
+                                    <td>{{ shift_list.end_date|date:"d.m.Y" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Nöbet Sayısı" %}</th>
+                                    <td>{{ shift_list.shift_count }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Kaynak" %}</th>
+                                    <td>
+                                        {% if shift_list.source %}
+                                        <span class="badge badge-info">{{ shift_list.source.name }}</span>
+                                        {% else %}
+                                        <span class="badge badge-secondary">{% trans "Manuel" %}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Oluşturulma Tarihi" %}</th>
+                                    <td>{{ shift_list.created_at|date:"d.m.Y H:i" }}</td>
+                                </tr>
+                                <tr>
+                                    <th>{% trans "Son Güncelleme" %}</th>
+                                    <td>{{ shift_list.updated_at|date:"d.m.Y H:i" }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Nöbet İstatistikleri -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Nöbet İstatistikleri" %}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Doktor Başına Nöbet Sayısı -->
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <canvas id="doctorShiftChart"></canvas>
+                            </div>
+                        </div>
+                        <!-- Günlere Göre Nöbet Dağılımı -->
+                        <div class="col-md-6">
+                            <div class="chart-container">
+                                <canvas id="dayDistributionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Nöbet Listesi Tablosu -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Nöbetler" %}</h6>
+            <div>
+                <button class="btn btn-success btn-sm" data-toggle="modal" data-target="#addShiftModal">
+                    <i class="fas fa-plus fa-sm"></i> {% trans "Nöbet Ekle" %}
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="shiftsTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Tarih" %}</th>
+                            <th>{% trans "Doktor" %}</th>
+                            <th>{% trans "Telefon" %}</th>
+                            <th>{% trans "Başlangıç" %}</th>
+                            <th>{% trans "Bitiş" %}</th>
+                            <th>{% trans "Notlar" %}</th>
+                            <th>{% trans "İşlemler" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for shift in shifts %}
+                        <tr>
+                            <td>{{ shift.date|date:"d.m.Y" }}</td>
+                            <td>{{ shift.doctor.full_name }}</td>
+                            <td>
+                                {% if show_contact_info %}
+                                {{ shift.doctor.phone_number }}
+                                {% else %}
+                                <span class="text-muted">{% trans "Gizli" %}</span>
+                                <a href="#" class="show-contact" data-phone="{{ shift.doctor.phone_number }}">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                {% endif %}
+                            </td>
+                            <td>{{ shift.start_time|time:"H:i" }}</td>
+                            <td>{{ shift.end_time|time:"H:i" }}</td>
+                            <td>{{ shift.notes|default:"-" }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-warning edit-shift" data-id="{{ shift.id }}" data-toggle="modal" data-target="#editShiftModal">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger delete-shift" data-id="{{ shift.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">{% trans "Bu nöbet listesinde henüz nöbet bulunmamaktadır." %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Nöbet Ekleme Modalı -->
+<div class="modal fade" id="addShiftModal" tabindex="-1" role="dialog" aria-labelledby="addShiftModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addShiftModalLabel">{% trans "Nöbet Ekle" %}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="addShiftForm" method="post" action="{% url 'shift_create' shift_list.id %}">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="id_date">{% trans "Tarih" %}</label>
+                            <input type="date" name="date" id="id_date" class="form-control" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="id_doctor">{% trans "Doktor" %}</label>
+                            <select name="doctor" id="id_doctor" class="form-control select2" required>
+                                <option value="">{% trans "Seçiniz..." %}</option>
+                                {% for doctor in doctors %}
+                                <option value="{{ doctor.id }}">{{ doctor.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="id_start_time">{% trans "Başlangıç Saati" %}</label>
+                            <input type="time" name="start_time" id="id_start_time" class="form-control" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="id_end_time">{% trans "Bitiş Saati" %}</label>
+                            <input type="time" name="end_time" id="id_end_time" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="id_notes">{% trans "Notlar" %}</label>
+                        <textarea name="notes" id="id_notes" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans "İptal" %}</button>
+                    <button type="submit" class="btn btn-success">{% trans "Kaydet" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Nöbet Düzenleme Modalı -->
+<div class="modal fade" id="editShiftModal" tabindex="-1" role="dialog" aria-labelledby="editShiftModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editShiftModalLabel">{% trans "Nöbet Düzenle" %}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form id="editShiftForm" method="post">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="edit_date">{% trans "Tarih" %}</label>
+                            <input type="date" name="date" id="edit_date" class="form-control" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="edit_doctor">{% trans "Doktor" %}</label>
+                            <select name="doctor" id="edit_doctor" class="form-control select2" required>
+                                <option value="">{% trans "Seçiniz..." %}</option>
+                                {% for doctor in doctors %}
+                                <option value="{{ doctor.id }}">{{ doctor.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="edit_start_time">{% trans "Başlangıç Saati" %}</label>
+                            <input type="time" name="start_time" id="edit_start_time" class="form-control" required>
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="edit_end_time">{% trans "Bitiş Saati" %}</label>
+                            <input type="time" name="end_time" id="edit_end_time" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit_notes">{% trans "Notlar" %}</label>
+                        <textarea name="notes" id="edit_notes" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans "İptal" %}</button>
+                    <button type="submit" class="btn btn-warning">{% trans "Güncelle" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Silme Onay Modalı -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">{% trans "Nöbet Listesini Sil" %}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {% trans "Bu nöbet listesini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve tüm nöbetler silinecektir." %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans "İptal" %}</button>
+                <form method="post" action="{% url 'shift_list_delete' shift_list.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">{% trans "Sil" %}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Nöbet Silme Onay Modalı -->
+<div class="modal fade" id="deleteShiftModal" tabindex="-1" role="dialog" aria-labelledby="deleteShiftModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteShiftModalLabel">{% trans "Nöbeti Sil" %}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {% trans "Bu nöbeti silmek istediğinizden emin misiniz? Bu işlem geri alınamaz." %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans "İptal" %}</button>
+                <form id="deleteShiftForm" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">{% trans "Sil" %}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+<script src="{% static 'vendor/select2/select2.min.js' %}"></script>
+<script src="{% static 'vendor/sweetalert2/sweetalert2.all.min.js' %}"></script>
+<script src="{% static 'vendor/chart.js/Chart.min.js' %}"></script>
+
+<script>
+    $(document).ready(function() {
+        // DataTables Türkçe dil desteği
+        $('#shiftsTable').DataTable({
+            "language": {
+                "url": "{% static 'vendor/datatables/Turkish.json' %}"
+            },
+            "pageLength": 25,
+            "ordering": true,
+            "order": [[0, 'asc']]  // Tarihe göre sırala
+        });
+
+        // Select2 inicializasyonu
+        $('.select2').select2({
+            placeholder: "{% trans 'Seçiniz...' %}",
+            allowClear: true,
+            dropdownParent: $('.modal')
+        });
+
+        // Nöbet ekleme formu gönderimi
+        $('#addShiftForm').on('submit', function(e) {
+            e.preventDefault();
+            var form = $(this);
+            var url = form.attr('action');
+            
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: form.serialize(),
+                success: function(response) {
+                    $('#addShiftModal').modal('hide');
+                    Swal.fire({
+                        title: '{% trans "Başarılı!" %}',
+                        text: '{% trans "Nöbet başarıyla eklendi." %}',
+                        icon: 'success',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    }).then(function() {
+                        window.location.reload();
+                    });
+                },
+                error: function(xhr, status, error) {
+                    var errorMessage = '{% trans "Nöbet eklenirken bir hata oluştu." %}';
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        errorMessage = xhr.responseJSON.errors.join('\n');
+                    }
+                    
+                    Swal.fire({
+                        title: '{% trans "Hata!" %}',
+                        text: errorMessage,
+                        icon: 'error',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    });
+                }
+            });
+        });
+
+        // Nöbet düzenleme modalını aç
+        $('.edit-shift').on('click', function() {
+            var shiftId = $(this).data('id');
+            var url = '{% url "shift_update" 0 %}'.replace('0', shiftId);
+            
+            // Form action URL'sini ayarla
+            $('#editShiftForm').attr('action', url);
+            
+            // Nöbet verilerini getir
+            $.ajax({
+                url: url,
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    $('#edit_date').val(data.date);
+                    $('#edit_doctor').val(data.doctor).trigger('change');
+                    $('#edit_start_time').val(data.start_time);
+                    $('#edit_end_time').val(data.end_time);
+                    $('#edit_notes').val(data.notes);
+                },
+                error: function() {
+                    Swal.fire({
+                        title: '{% trans "Hata!" %}',
+                        text: '{% trans "Nöbet bilgileri alınırken bir hata oluştu." %}',
+                        icon: 'error',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    });
+                }
+            });
+        });
+
+        // Nöbet düzenleme formu gönderimi
+        $('#editShiftForm').on('submit', function(e) {
+            e.preventDefault();
+            var form = $(this);
+            var url = form.attr('action');
+            
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: form.serialize(),
+                success: function(response) {
+                    $('#editShiftModal').modal('hide');
+                    Swal.fire({
+                        title: '{% trans "Başarılı!" %}',
+                        text: '{% trans "Nöbet başarıyla güncellendi." %}',
+                        icon: 'success',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    }).then(function() {
+                        window.location.reload();
+                    });
+                },
+                error: function(xhr, status, error) {
+                    var errorMessage = '{% trans "Nöbet güncellenirken bir hata oluştu." %}';
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        errorMessage = xhr.responseJSON.errors.join('\n');
+                    }
+                    
+                    Swal.fire({
+                        title: '{% trans "Hata!" %}',
+                        text: errorMessage,
+                        icon: 'error',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    });
+                }
+            });
+        });
+
+        // Nöbet silme modalını aç
+        $('.delete-shift').on('click', function() {
+            var shiftId = $(this).data('id');
+            var url = '{% url "shift_delete" 0 %}'.replace('0', shiftId);
+            
+            // Form action URL'sini ayarla
+            $('#deleteShiftForm').attr('action', url);
+            $('#deleteShiftModal').modal('show');
+        });
+
+        // Nöbet silme formu gönderimi
+        $('#deleteShiftForm').on('submit', function(e) {
+            e.preventDefault();
+            var form = $(this);
+            var url = form.attr('action');
+            
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: form.serialize(),
+                success: function(response) {
+                    $('#deleteShiftModal').modal('hide');
+                    Swal.fire({
+                        title: '{% trans "Başarılı!" %}',
+                        text: '{% trans "Nöbet başarıyla silindi." %}',
+                        icon: 'success',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    }).then(function() {
+                        window.location.reload();
+                    });
+                },
+                error: function() {
+                    $('#deleteShiftModal').modal('hide');
+                    Swal.fire({
+                        title: '{% trans "Hata!" %}',
+                        text: '{% trans "Nöbet silinirken bir hata oluştu." %}',
+                        icon: 'error',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    });
+                }
+            });
+        });
+
+        // Telefon numarası gösterme
+        $('.show-contact').on('click', function(e) {
+            e.preventDefault();
+            var phone = $(this).data('phone');
+            var element = $(this).parent();
+            
+            element.html(phone);
+        });
+
+        // Grafikleri oluştur
+        createCharts();
+    });
+
+    function createCharts() {
+        // Doktor başına nöbet sayısı grafiği
+        var doctorCtx = document.getElementById('doctorShiftChart').getContext('2d');
+        var doctorData = {
+            labels: {{ doctor_names|safe }},
+            datasets: [{
+                label: '{% trans "Nöbet Sayısı" %}',
+                data: {{ doctor_shift_counts|safe }},
+                backgroundColor: 'rgba(78, 115, 223, 0.5)',
+                borderColor: 'rgba(78, 115, 223, 1)',
+                borderWidth: 1
+            }]
+        };
+        var doctorChart = new Chart(doctorCtx, {
+            type: 'bar',
+            data: doctorData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                title: {
+                    display: true,
+                    text: '{% trans "Doktor Başına Nöbet Sayısı" %}'
+                },
+                scales: {
+                    yAxes: [{
+                        ticks: {
+                            beginAtZero: true,
+                            stepSize: 1
+                        }
+                    }]
+                }
+            }
+        });
+
+        // Günlere göre nöbet dağılımı grafiği
+        var dayCtx = document.getElementById('dayDistributionChart').getContext('2d');
+        var dayData = {
+            labels: ['{% trans "Pazartesi" %}', '{% trans "Salı" %}', '{% trans "Çarşamba" %}', '{% trans "Perşembe" %}', '{% trans "Cuma" %}', '{% trans "Cumartesi" %}', '{% trans "Pazar" %}'],
+            datasets: [{
+                label: '{% trans "Nöbet Sayısı" %}',
+                data: {{ day_distribution|safe }},
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.5)',
+                    'rgba(54, 162, 235, 0.5)',
+                    'rgba(255, 206, 86, 0.5)',
+                    'rgba(75, 192, 192, 0.5)',
+                    'rgba(153, 102, 255, 0.5)',
+                    'rgba(255, 159, 64, 0.5)',
+                    'rgba(201, 203, 207, 0.5)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)',
+                    'rgba(201, 203, 207, 1)'
+                ],
+                borderWidth: 1
+            }]
+        };
+        var dayChart = new Chart(dayCtx, {
+            type: 'pie',
+            data: dayData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                title: {
+                    display: true,
+                    text: '{% trans "Günlere Göre Nöbet Dağılımı" %}'
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

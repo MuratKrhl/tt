@@ -1,0 +1,346 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Veri Kaynakları" %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}">
+<link rel="stylesheet" href="{% static 'vendor/sweetalert2/sweetalert2.min.css' %}">
+<style>
+    .badge-source-type {
+        font-size: 85%;
+    }
+    .badge-csv {
+        background-color: #4e73df;
+    }
+    .badge-excel {
+        background-color: #1cc88a;
+    }
+    .badge-html {
+        background-color: #f6c23e;
+    }
+    .badge-pdf {
+        background-color: #e74a3b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Başlık -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{% trans "Veri Kaynakları" %}</h1>
+        <div>
+            <a href="{% url 'file_upload' %}" class="btn btn-info btn-sm mr-2">
+                <i class="fas fa-file-upload fa-sm text-white-50 mr-1"></i> {% trans "Dosya Yükle" %}
+            </a>
+            <a href="{% url 'data_source_create' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> {% trans "Yeni Veri Kaynağı" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtre Kartı -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Filtreler" %}</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" id="filterForm">
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label for="name">{% trans "İsim" %}</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ request.GET.name|default:'' }}">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="department">{% trans "Bölüm" %}</label>
+                        <select class="form-control" id="department" name="department">
+                            <option value="">{% trans "Tümü" %}</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}" {% if request.GET.department == dept.id|stringformat:"i" %}selected{% endif %}>{{ dept.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="source_type">{% trans "Kaynak Tipi" %}</label>
+                        <select class="form-control" id="source_type" name="source_type">
+                            <option value="">{% trans "Tümü" %}</option>
+                            <option value="csv" {% if request.GET.source_type == 'csv' %}selected{% endif %}>CSV</option>
+                            <option value="excel" {% if request.GET.source_type == 'excel' %}selected{% endif %}>Excel</option>
+                            <option value="html" {% if request.GET.source_type == 'html' %}selected{% endif %}>HTML</option>
+                            <option value="pdf" {% if request.GET.source_type == 'pdf' %}selected{% endif %}>PDF</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label for="status">{% trans "Durum" %}</label>
+                        <select class="form-control" id="status" name="status">
+                            <option value="">{% trans "Tümü" %}</option>
+                            <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>{% trans "Aktif" %}</option>
+                            <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>{% trans "Pasif" %}</option>
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary mr-2">
+                            <i class="fas fa-search fa-sm"></i> {% trans "Filtrele" %}
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="resetFilters">
+                            <i class="fas fa-undo fa-sm"></i> {% trans "Sıfırla" %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Veri Kaynakları Tablosu -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Veri Kaynakları Listesi" %}</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="dataSourcesTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "İsim" %}</th>
+                            <th>{% trans "Bölüm" %}</th>
+                            <th>{% trans "Kaynak Tipi" %}</th>
+                            <th>{% trans "URL" %}</th>
+                            <th>{% trans "Son Çekme" %}</th>
+                            <th>{% trans "Durum" %}</th>
+                            <th>{% trans "İşlemler" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for source in data_sources %}
+                        <tr>
+                            <td>{{ source.name }}</td>
+                            <td>{{ source.department.name }}</td>
+                            <td>
+                                <span class="badge badge-source-type badge-{{ source.source_type }}">{{ source.get_source_type_display }}</span>
+                            </td>
+                            <td>
+                                <a href="{{ source.url }}" target="_blank" class="text-truncate d-inline-block" style="max-width: 200px;" title="{{ source.url }}">
+                                    {{ source.url|truncatechars:30 }}
+                                </a>
+                            </td>
+                            <td>
+                                {% if source.last_fetch %}
+                                {{ source.last_fetch|date:"d.m.Y H:i" }}
+                                {% else %}
+                                <span class="text-muted">{% trans "Henüz çekilmedi" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if source.is_active %}
+                                <span class="badge badge-success">{% trans "Aktif" %}</span>
+                                {% else %}
+                                <span class="badge badge-secondary">{% trans "Pasif" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'data_source_update' source.id %}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button class="btn btn-sm btn-info fetch-now" data-id="{{ source.id }}" title="{% trans 'Şimdi Çek' %}">
+                                        <i class="fas fa-sync"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger delete-source" data-id="{{ source.id }}" title="{% trans 'Sil' %}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center">{% trans "Henüz veri kaynağı bulunmamaktadır." %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Sayfalama -->
+            {% if data_sources.has_other_pages %}
+            <div class="mt-4">
+                <nav aria-label="{% trans 'Sayfalama' %}">
+                    <ul class="pagination justify-content-center">
+                        {% if data_sources.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if request.GET %}{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}{% endif %}page={{ data_sources.previous_page_number }}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link"><i class="fas fa-angle-left"></i></span>
+                        </li>
+                        {% endif %}
+
+                        {% for i in data_sources.paginator.page_range %}
+                            {% if data_sources.number == i %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ i }}</span>
+                            </li>
+                            {% elif i > data_sources.number|add:'-3' and i < data_sources.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if request.GET %}{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}{% endif %}page={{ i }}">{{ i }}</a>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if data_sources.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% if request.GET %}{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}{% endif %}page={{ data_sources.next_page_number }}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link"><i class="fas fa-angle-right"></i></span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Silme Onay Modalı -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">{% trans "Veri Kaynağını Sil" %}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {% trans "Bu veri kaynağını silmek istediğinizden emin misiniz? Bu işlem geri alınamaz ve bu kaynakla ilişkili tüm çekme logları silinecektir." %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans "İptal" %}</button>
+                <form id="deleteForm" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">{% trans "Sil" %}</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+<script src="{% static 'vendor/sweetalert2/sweetalert2.all.min.js' %}"></script>
+
+<script>
+    $(document).ready(function() {
+        // DataTables Türkçe dil dosyası
+        var turkishLanguage = {
+            "emptyTable": "{% trans 'Tabloda herhangi bir veri mevcut değil' %}",
+            "info": "{% trans '_TOTAL_ kayıttan _START_ - _END_ arasındaki kayıtlar gösteriliyor' %}",
+            "infoEmpty": "{% trans 'Kayıt yok' %}",
+            "infoFiltered": "{% trans '(_MAX_ kayıt içerisinden bulunan)' %}",
+            "infoPostFix": "",
+            "thousands": ".",
+            "lengthMenu": "{% trans 'Sayfada _MENU_ kayıt göster' %}",
+            "loadingRecords": "{% trans 'Yükleniyor...' %}",
+            "processing": "{% trans 'İşleniyor...' %}",
+            "search": "{% trans 'Ara:' %}",
+            "zeroRecords": "{% trans 'Eşleşen kayıt bulunamadı' %}",
+            "paginate": {
+                "first": "{% trans 'İlk' %}",
+                "last": "{% trans 'Son' %}",
+                "next": "{% trans 'Sonraki' %}",
+                "previous": "{% trans 'Önceki' %}"
+            },
+            "aria": {
+                "sortAscending": "{% trans ': artan sütun sıralamasını aktifleştir' %}",
+                "sortDescending": "{% trans ': azalan sütun sıralamasını aktifleştir' %}"
+            }
+        };
+
+        // DataTables inicializasyonu
+        $('#dataSourcesTable').DataTable({
+            "language": turkishLanguage,
+            "paging": false,
+            "searching": false,
+            "ordering": true,
+            "info": false,
+            "autoWidth": false,
+            "responsive": true
+        });
+
+        // Filtreleri sıfırla
+        $('#resetFilters').on('click', function() {
+            window.location.href = '{% url "data_source_list" %}';
+        });
+
+        // Veri kaynağını sil
+        $('.delete-source').on('click', function() {
+            var sourceId = $(this).data('id');
+            var url = '{% url "data_source_delete" 0 %}'.replace('0', sourceId);
+            $('#deleteForm').attr('action', url);
+            $('#deleteModal').modal('show');
+        });
+
+        // Şimdi çek
+        $('.fetch-now').on('click', function() {
+            var sourceId = $(this).data('id');
+            var url = '{% url "data_source_fetch" 0 %}'.replace('0', sourceId);
+            
+            Swal.fire({
+                title: '{% trans "Veri Çekiliyor..." %}',
+                text: '{% trans "Veri kaynağından veriler çekiliyor, lütfen bekleyin." %}',
+                icon: 'info',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                onBeforeOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    Swal.fire({
+                        title: '{% trans "Başarılı!" %}',
+                        text: response.message,
+                        icon: 'success',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    }).then(function() {
+                        window.location.reload();
+                    });
+                },
+                error: function(xhr, status, error) {
+                    var errorMessage = '{% trans "Veri çekilirken bir hata oluştu." %}';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMessage = xhr.responseJSON.error;
+                    }
+                    
+                    Swal.fire({
+                        title: '{% trans "Hata!" %}',
+                        text: errorMessage,
+                        icon: 'error',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

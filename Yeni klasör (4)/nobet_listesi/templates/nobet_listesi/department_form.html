@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}
+    {% if department.id %}
+        {% trans "Bölüm Düzenle" %}
+    {% else %}
+        {% trans "Yeni Bölüm Ekle" %}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Başlık -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            {% if department.id %}
+                {% trans "Bölüm Düzenle" %}
+            {% else %}
+                {% trans "Yeni Bölüm Ekle" %}
+            {% endif %}
+        </h1>
+        <a href="{% url 'department_list' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50 mr-1"></i> {% trans "Bölüm Listesine Dön" %}
+        </a>
+    </div>
+
+    <!-- Form Kartı -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                {% if department.id %}
+                    {% trans "Bölüm Bilgilerini Düzenle" %}
+                {% else %}
+                    {% trans "Bölüm Bilgileri" %}
+                {% endif %}
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="post" id="departmentForm">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="form-group">
+                    <label for="{{ form.name.id_for_label }}">{% trans "Bölüm Adı" %} *</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.name.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if form.name.help_text %}
+                    <small class="form-text text-muted">{{ form.name.help_text }}</small>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.code.id_for_label }}">{% trans "Bölüm Kodu" %}</label>
+                    {{ form.code }}
+                    {% if form.code.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.code.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if form.code.help_text %}
+                    <small class="form-text text-muted">{{ form.code.help_text }}</small>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.description.id_for_label }}">{% trans "Açıklama" %}</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.description.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if form.description.help_text %}
+                    <small class="form-text text-muted">{{ form.description.help_text }}</small>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <div class="custom-control custom-checkbox">
+                        {{ form.is_active }}
+                        <label class="custom-control-label" for="{{ form.is_active.id_for_label }}">{% trans "Aktif" %}</label>
+                    </div>
+                    {% if form.is_active.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.is_active.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if form.is_active.help_text %}
+                    <small class="form-text text-muted">{{ form.is_active.help_text }}</small>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group text-right">
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='{% url "department_list" %}'">
+                        {% trans "İptal" %}
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        {% if department.id %}
+                            <i class="fas fa-save mr-1"></i> {% trans "Güncelle" %}
+                        {% else %}
+                            <i class="fas fa-plus mr-1"></i> {% trans "Ekle" %}
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/sweetalert2/sweetalert2.all.min.js' %}"></script>
+
+<script>
+    $(document).ready(function() {
+        // Form alanlarını düzenle
+        $('#{{ form.name.id_for_label }}').addClass('form-control');
+        $('#{{ form.code.id_for_label }}').addClass('form-control');
+        $('#{{ form.description.id_for_label }}').addClass('form-control');
+        $('#{{ form.is_active.id_for_label }}').addClass('custom-control-input');
+
+        // Bölüm kodu otomatik oluşturma
+        $('#{{ form.name.id_for_label }}').on('blur', function() {
+            var departmentName = $(this).val();
+            var codeField = $('#{{ form.code.id_for_label }}');
+            
+            // Eğer kod alanı boşsa ve bölüm adı girilmişse otomatik kod oluştur
+            if (!codeField.val() && departmentName) {
+                // Türkçe karakterleri değiştir
+                var code = departmentName
+                    .replace(/ı/g, 'i')
+                    .replace(/İ/g, 'I')
+                    .replace(/ğ/g, 'g')
+                    .replace(/Ğ/g, 'G')
+                    .replace(/ü/g, 'u')
+                    .replace(/Ü/g, 'U')
+                    .replace(/ş/g, 's')
+                    .replace(/Ş/g, 'S')
+                    .replace(/ç/g, 'c')
+                    .replace(/Ç/g, 'C')
+                    .replace(/ö/g, 'o')
+                    .replace(/Ö/g, 'O');
+                
+                // Sadece harf ve rakamları al, boşlukları tire ile değiştir
+                code = code.replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '-');
+                
+                // Büyük harfe çevir ve maksimum 10 karakter al
+                code = code.toUpperCase().substring(0, 10);
+                
+                codeField.val(code);
+            }
+        });
+
+        // Form gönderimi
+        $('#departmentForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            // Zorunlu alanları kontrol et
+            if (!$('#{{ form.name.id_for_label }}').val()) {
+                $('#{{ form.name.id_for_label }}').addClass('is-invalid');
+                
+                Swal.fire({
+                    title: '{% trans "Uyarı!" %}',
+                    text: '{% trans "Lütfen bölüm adını girin." %}',
+                    icon: 'warning',
+                    confirmButtonText: '{% trans "Tamam" %}'
+                });
+                
+                return;
+            } else {
+                $('#{{ form.name.id_for_label }}').removeClass('is-invalid');
+            }
+            
+            // Form verilerini al
+            var formData = $(this).serialize();
+            
+            // AJAX ile form gönder
+            $.ajax({
+                url: '{% if department.id %}{% url "department_update" department.id %}{% else %}{% url "department_create" %}{% endif %}',
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: '{% trans "Başarılı!" %}',
+                            text: response.message,
+                            icon: 'success',
+                            confirmButtonText: '{% trans "Tamam" %}'
+                        }).then(function() {
+                            window.location.href = '{% url "department_list" %}';
+                        });
+                    } else {
+                        Swal.fire({
+                            title: '{% trans "Hata!" %}',
+                            text: response.error || '{% trans "İşlem sırasında bir hata oluştu." %}',
+                            icon: 'error',
+                            confirmButtonText: '{% trans "Tamam" %}'
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    var errorMessage = '{% trans "İşlem sırasında bir hata oluştu." %}';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMessage = xhr.responseJSON.error;
+                    }
+                    
+                    Swal.fire({
+                        title: '{% trans "Hata!" %}',
+                        text: errorMessage,
+                        icon: 'error',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

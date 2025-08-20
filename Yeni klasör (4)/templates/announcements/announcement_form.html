@@ -1,0 +1,307 @@
+{% load static %}
+
+<form id="announcementForm" action="{% if announcement %}{% url 'announcement_update' announcement.id %}{% else %}{% url 'announcement_create' %}{% endif %}" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="form-group">
+                <label for="{{ form.title.id_for_label }}" class="form-control-label">{{ form.title.label }}</label>
+                {{ form.title }}
+                <div class="invalid-feedback">{{ form.title.errors }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="form-group">
+                <label for="{{ form.content.id_for_label }}" class="form-control-label">{{ form.content.label }}</label>
+                {{ form.content }}
+                <div class="invalid-feedback">{{ form.content.errors }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-group">
+                <label for="{{ form.announcement_type.id_for_label }}" class="form-control-label">{{ form.announcement_type.label }}</label>
+                {{ form.announcement_type }}
+                <div class="invalid-feedback">{{ form.announcement_type.errors }}</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label for="{{ form.priority.id_for_label }}" class="form-control-label">{{ form.priority.label }}</label>
+                {{ form.priority }}
+                <div class="invalid-feedback">{{ form.priority.errors }}</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="form-group">
+                <label for="{{ form.product.id_for_label }}" class="form-control-label">{{ form.product.label }}</label>
+                {{ form.product }}
+                <div class="invalid-feedback">{{ form.product.errors }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="{{ form.start_date.id_for_label }}" class="form-control-label">{{ form.start_date.label }}</label>
+                <div class="input-group">
+                    {{ form.start_date }}
+                    <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                </div>
+                <div class="invalid-feedback">{{ form.start_date.errors }}</div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="{{ form.end_date.id_for_label }}" class="form-control-label">{{ form.end_date.label }}</label>
+                <div class="input-group">
+                    {{ form.end_date }}
+                    <span class="input-group-text"><i class="fas fa-calendar"></i></span>
+                </div>
+                <div class="invalid-feedback">{{ form.end_date.errors }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="{{ form.tags.id_for_label }}" class="form-control-label">{{ form.tags.label }}</label>
+                {{ form.tags }}
+                <div class="invalid-feedback">{{ form.tags.errors }}</div>
+                <small class="form-text text-muted">Etiket eklemek için + butonuna tıklayın</small>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="form-group">
+                <label for="{{ form.status.id_for_label }}" class="form-control-label">{{ form.status.label }}</label>
+                {{ form.status }}
+                <div class="invalid-feedback">{{ form.status.errors }}</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <div class="form-check form-switch">
+                {{ form.pinned }}
+                <label class="form-check-label" for="{{ form.pinned.id_for_label }}">{{ form.pinned.label }}</label>
+                <div class="invalid-feedback">{{ form.pinned.errors }}</div>
+            </div>
+        </div>
+    </div>
+    
+    {% if announcement %}
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="form-group">
+                <label class="form-control-label">Dosya Ekle</label>
+                <div class="input-group">
+                    <input type="file" name="files" multiple class="form-control" id="announcement_files">
+                    <button class="btn btn-outline-primary mb-0" type="button" id="upload_files_btn">
+                        <i class="fas fa-upload"></i> Yükle
+                    </button>
+                </div>
+                <small class="form-text text-muted">Birden fazla dosya seçebilirsiniz</small>
+            </div>
+            
+            {% if announcement.files.exists %}
+            <div class="table-responsive mt-3">
+                <table class="table align-items-center mb-0">
+                    <thead>
+                        <tr>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Dosya Adı</th>
+                            <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Yüklenme Tarihi</th>
+                            <th class="text-secondary opacity-7"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for file in announcement.files.all %}
+                        <tr>
+                            <td>
+                                <div class="d-flex px-2 py-1">
+                                    <div>
+                                        <i class="fas fa-file text-primary me-3"></i>
+                                    </div>
+                                    <div class="d-flex flex-column justify-content-center">
+                                        <h6 class="mb-0 text-sm">{{ file.file_name }}</h6>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <p class="text-xs text-secondary mb-0">{{ file.uploaded_at|date:"d.m.Y H:i" }}</p>
+                            </td>
+                            <td class="align-middle">
+                                <a href="{{ file.file.url }}" class="btn btn-link text-secondary mb-0" target="_blank">
+                                    <i class="fas fa-download" data-bs-toggle="tooltip" title="İndir"></i>
+                                </a>
+                                <a href="#" class="btn btn-link text-danger mb-0 delete-file" data-file-id="{{ file.id }}">
+                                    <i class="fas fa-trash" data-bs-toggle="tooltip" title="Sil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="row mt-4">
+        <div class="col-md-12 text-end">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+            {% if not announcement or announcement.status == 'draft' %}
+            <button type="submit" name="save_draft" class="btn btn-primary">Taslak Olarak Kaydet</button>
+            <button type="submit" name="publish" class="btn btn-success">Yayınla</button>
+            {% else %}
+            <button type="submit" class="btn btn-success">Kaydet</button>
+            {% endif %}
+        </div>
+    </div>
+</form>
+
+<script>
+    $(document).ready(function() {
+        // Select2 için etiketleri yapılandır
+        $('#id_tags').select2({
+            tags: true,
+            tokenSeparators: [','],
+            placeholder: 'Etiket seçin veya yeni ekleyin...',
+            allowClear: true,
+            ajax: {
+                url: '{% url "tag_create" %}',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        term: params.term || '',
+                        page: params.page || 1
+                    };
+                },
+                processResults: function(data, params) {
+                    params.page = params.page || 1;
+                    return {
+                        results: data.results,
+                        pagination: {
+                            more: data.pagination.more
+                        }
+                    };
+                },
+                cache: true
+            },
+            createTag: function(params) {
+                var term = $.trim(params.term);
+                if (term === '') {
+                    return null;
+                }
+                return {
+                    id: term,
+                    text: term,
+                    newTag: true
+                };
+            }
+        });
+        
+        // Dosya yükleme işlemi
+        $('#upload_files_btn').on('click', function() {
+            var fileInput = $('#announcement_files')[0];
+            if (fileInput.files.length > 0) {
+                var formData = new FormData();
+                formData.append('csrfmiddlewaretoken', $('input[name="csrfmiddlewaretoken"]').val());
+                
+                for (var i = 0; i < fileInput.files.length; i++) {
+                    formData.append('files', fileInput.files[i]);
+                }
+                
+                $.ajax({
+                    url: '{% if announcement %}{% url "file_upload" announcement.id %}{% endif %}',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        // Başarılı mesajı göster
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Başarılı!',
+                            text: 'Dosyalar başarıyla yüklendi.',
+                            confirmButtonText: 'Tamam'
+                        }).then((result) => {
+                            // Sayfayı yenile
+                            window.location.reload();
+                        });
+                    },
+                    error: function(xhr) {
+                        // Hata mesajını göster
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Hata!',
+                            text: 'Dosya yükleme sırasında bir hata oluştu.',
+                            confirmButtonText: 'Tamam'
+                        });
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Uyarı!',
+                    text: 'Lütfen en az bir dosya seçin.',
+                    confirmButtonText: 'Tamam'
+                });
+            }
+        });
+        
+        // Dosya silme işlemi
+        $('.delete-file').on('click', function(e) {
+            e.preventDefault();
+            var fileId = $(this).data('file-id');
+            
+            Swal.fire({
+                title: 'Emin misiniz?',
+                text: "Bu dosyayı silmek istediğinizden emin misiniz?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Evet, sil!',
+                cancelButtonText: 'İptal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '{% url "file_delete" 0 %}'.replace('0', fileId),
+                        type: 'POST',
+                        data: {
+                            'csrfmiddlewaretoken': $('input[name="csrfmiddlewaretoken"]').val()
+                        },
+                        success: function(response) {
+                            Swal.fire(
+                                'Silindi!',
+                                'Dosya başarıyla silindi.',
+                                'success'
+                            ).then((result) => {
+                                // Sayfayı yenile
+                                window.location.reload();
+                            });
+                        },
+                        error: function(xhr) {
+                            Swal.fire(
+                                'Hata!',
+                                'Dosya silinirken bir hata oluştu.',
+                                'error'
+                            );
+                        }
+                    });
+                }
+            });
+        });
+    });
+</script>

@@ -1,0 +1,415 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Sistem Günlükleri" %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}">
+<link rel="stylesheet" href="{% static 'vendor/daterangepicker/daterangepicker.css' %}">
+<style>
+    .nav-tabs .nav-link.active {
+        font-weight: bold;
+        border-top: 3px solid #4e73df;
+    }
+    
+    .log-success {
+        color: #1cc88a;
+    }
+    
+    .log-error {
+        color: #e74a3b;
+    }
+    
+    .log-warning {
+        color: #f6c23e;
+    }
+    
+    .log-info {
+        color: #36b9cc;
+    }
+    
+    .log-details {
+        max-height: 300px;
+        overflow-y: auto;
+        background-color: #f8f9fc;
+        border: 1px solid #e3e6f0;
+        border-radius: 0.35rem;
+        padding: 1rem;
+        font-family: monospace;
+        white-space: pre-wrap;
+    }
+    
+    .filter-section {
+        background-color: #f8f9fc;
+        border: 1px solid #e3e6f0;
+        border-radius: 0.35rem;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Başlık -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{% trans "Sistem Günlükleri" %}</h1>
+    </div>
+
+    <!-- Sekme Menüsü -->
+    <ul class="nav nav-tabs mb-4" id="logTabs" role="tablist">
+        <li class="nav-item">
+            <a class="nav-link active" id="audit-tab" data-toggle="tab" href="#audit" role="tab" aria-controls="audit" aria-selected="true">
+                <i class="fas fa-clipboard-list mr-1"></i> {% trans "Denetim Günlükleri" %}
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="fetch-tab" data-toggle="tab" href="#fetch" role="tab" aria-controls="fetch" aria-selected="false">
+                <i class="fas fa-download mr-1"></i> {% trans "Veri Çekme Günlükleri" %}
+            </a>
+        </li>
+    </ul>
+
+    <!-- Sekme İçerikleri -->
+    <div class="tab-content" id="logTabsContent">
+        <!-- Denetim Günlükleri Sekmesi -->
+        <div class="tab-pane fade show active" id="audit" role="tabpanel" aria-labelledby="audit-tab">
+            <!-- Filtre Bölümü -->
+            <div class="filter-section mb-4">
+                <form id="auditLogFilterForm" method="get">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="auditUserFilter">{% trans "Kullanıcı" %}</label>
+                            <select class="form-control" id="auditUserFilter" name="user">
+                                <option value="">{% trans "Tümü" %}</option>
+                                {% for user in users %}
+                                <option value="{{ user.id }}" {% if request.GET.user == user.id|stringformat:"i" %}selected{% endif %}>{{ user.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="auditActionFilter">{% trans "İşlem" %}</label>
+                            <select class="form-control" id="auditActionFilter" name="action">
+                                <option value="">{% trans "Tümü" %}</option>
+                                <option value="create" {% if request.GET.action == "create" %}selected{% endif %}>{% trans "Oluşturma" %}</option>
+                                <option value="update" {% if request.GET.action == "update" %}selected{% endif %}>{% trans "Güncelleme" %}</option>
+                                <option value="delete" {% if request.GET.action == "delete" %}selected{% endif %}>{% trans "Silme" %}</option>
+                                <option value="fetch" {% if request.GET.action == "fetch" %}selected{% endif %}>{% trans "Veri Çekme" %}</option>
+                                <option value="export" {% if request.GET.action == "export" %}selected{% endif %}>{% trans "Dışa Aktarma" %}</option>
+                                <option value="login" {% if request.GET.action == "login" %}selected{% endif %}>{% trans "Giriş" %}</option>
+                                <option value="logout" {% if request.GET.action == "logout" %}selected{% endif %}>{% trans "Çıkış" %}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="auditDateFilter">{% trans "Tarih Aralığı" %}</label>
+                            <input type="text" class="form-control" id="auditDateFilter" name="date_range" value="{{ request.GET.date_range|default:'' }}" placeholder="{% trans 'Tarih aralığı seçin' %}">
+                        </div>
+                        <div class="col-md-3 mb-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary mr-2">
+                                <i class="fas fa-filter mr-1"></i> {% trans "Filtrele" %}
+                            </button>
+                            <a href="{% url 'logs' %}?tab=audit" class="btn btn-secondary">
+                                <i class="fas fa-undo mr-1"></i> {% trans "Sıfırla" %}
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Denetim Günlükleri Tablosu -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Denetim Günlükleri" %}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="auditLogTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "Tarih/Saat" %}</th>
+                                    <th>{% trans "Kullanıcı" %}</th>
+                                    <th>{% trans "İşlem" %}</th>
+                                    <th>{% trans "Model" %}</th>
+                                    <th>{% trans "Nesne ID" %}</th>
+                                    <th>{% trans "IP Adresi" %}</th>
+                                    <th>{% trans "Detaylar" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in audit_logs %}
+                                <tr>
+                                    <td>{{ log.timestamp|date:"d.m.Y H:i:s" }}</td>
+                                    <td>{{ log.user.username|default:"Sistem" }}</td>
+                                    <td>
+                                        {% if log.action == "create" %}
+                                        <span class="badge badge-success">{% trans "Oluşturma" %}</span>
+                                        {% elif log.action == "update" %}
+                                        <span class="badge badge-info">{% trans "Güncelleme" %}</span>
+                                        {% elif log.action == "delete" %}
+                                        <span class="badge badge-danger">{% trans "Silme" %}</span>
+                                        {% elif log.action == "fetch" %}
+                                        <span class="badge badge-primary">{% trans "Veri Çekme" %}</span>
+                                        {% elif log.action == "export" %}
+                                        <span class="badge badge-warning">{% trans "Dışa Aktarma" %}</span>
+                                        {% elif log.action == "login" %}
+                                        <span class="badge badge-secondary">{% trans "Giriş" %}</span>
+                                        {% elif log.action == "logout" %}
+                                        <span class="badge badge-secondary">{% trans "Çıkış" %}</span>
+                                        {% else %}
+                                        <span class="badge badge-dark">{{ log.action }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ log.content_type.model|capfirst }}</td>
+                                    <td>{{ log.object_id|default:"-" }}</td>
+                                    <td>{{ log.ip_address|default:"-" }}</td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-info view-log-details" data-toggle="modal" data-target="#logDetailsModal" data-details="{{ log.details|escapejs }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center">{% trans "Kayıtlı denetim günlüğü bulunamadı." %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Veri Çekme Günlükleri Sekmesi -->
+        <div class="tab-pane fade" id="fetch" role="tabpanel" aria-labelledby="fetch-tab">
+            <!-- Filtre Bölümü -->
+            <div class="filter-section mb-4">
+                <form id="fetchLogFilterForm" method="get">
+                    <input type="hidden" name="tab" value="fetch">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="fetchSourceFilter">{% trans "Veri Kaynağı" %}</label>
+                            <select class="form-control" id="fetchSourceFilter" name="source">
+                                <option value="">{% trans "Tümü" %}</option>
+                                {% for source in data_sources %}
+                                <option value="{{ source.id }}" {% if request.GET.source == source.id|stringformat:"i" %}selected{% endif %}>{{ source.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="fetchStatusFilter">{% trans "Durum" %}</label>
+                            <select class="form-control" id="fetchStatusFilter" name="status">
+                                <option value="">{% trans "Tümü" %}</option>
+                                <option value="success" {% if request.GET.status == "success" %}selected{% endif %}>{% trans "Başarılı" %}</option>
+                                <option value="error" {% if request.GET.status == "error" %}selected{% endif %}>{% trans "Hata" %}</option>
+                                <option value="in_progress" {% if request.GET.status == "in_progress" %}selected{% endif %}>{% trans "İşlemde" %}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="fetchDateFilter">{% trans "Tarih Aralığı" %}</label>
+                            <input type="text" class="form-control" id="fetchDateFilter" name="date_range" value="{{ request.GET.date_range|default:'' }}" placeholder="{% trans 'Tarih aralığı seçin' %}">
+                        </div>
+                        <div class="col-md-3 mb-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary mr-2">
+                                <i class="fas fa-filter mr-1"></i> {% trans "Filtrele" %}
+                            </button>
+                            <a href="{% url 'logs' %}?tab=fetch" class="btn btn-secondary">
+                                <i class="fas fa-undo mr-1"></i> {% trans "Sıfırla" %}
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Veri Çekme Günlükleri Tablosu -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Veri Çekme Günlükleri" %}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" id="fetchLogTable" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "Başlangıç Zamanı" %}</th>
+                                    <th>{% trans "Bitiş Zamanı" %}</th>
+                                    <th>{% trans "Veri Kaynağı" %}</th>
+                                    <th>{% trans "Durum" %}</th>
+                                    <th>{% trans "Süre (sn)" %}</th>
+                                    <th>{% trans "Satır Sayısı" %}</th>
+                                    <th>{% trans "Tetikleyen" %}</th>
+                                    <th>{% trans "Detaylar" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in fetch_logs %}
+                                <tr>
+                                    <td>{{ log.start_time|date:"d.m.Y H:i:s" }}</td>
+                                    <td>{{ log.end_time|date:"d.m.Y H:i:s"|default:"-" }}</td>
+                                    <td>{{ log.data_source.name }}</td>
+                                    <td>
+                                        {% if log.status == "success" %}
+                                        <span class="log-success"><i class="fas fa-check-circle mr-1"></i> {% trans "Başarılı" %}</span>
+                                        {% elif log.status == "error" %}
+                                        <span class="log-error"><i class="fas fa-times-circle mr-1"></i> {% trans "Hata" %}</span>
+                                        {% elif log.status == "in_progress" %}
+                                        <span class="log-info"><i class="fas fa-spinner fa-spin mr-1"></i> {% trans "İşlemde" %}</span>
+                                        {% else %}
+                                        <span class="log-warning"><i class="fas fa-question-circle mr-1"></i> {{ log.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ log.duration|floatformat:2|default:"-" }}</td>
+                                    <td>{{ log.rows_processed|default:"0" }}</td>
+                                    <td>
+                                        {% if log.triggered_by %}
+                                        {{ log.triggered_by.username }}
+                                        {% elif log.is_scheduled %}
+                                        <i class="fas fa-clock mr-1"></i> {% trans "Zamanlanmış" %}
+                                        {% else %}
+                                        {% trans "Sistem" %}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-sm btn-info view-log-details" data-toggle="modal" data-target="#logDetailsModal" data-details="{{ log.details|escapejs }}">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="8" class="text-center">{% trans "Kayıtlı veri çekme günlüğü bulunamadı." %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Log Detayları Modalı -->
+<div class="modal fade" id="logDetailsModal" tabindex="-1" role="dialog" aria-labelledby="logDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="logDetailsModalLabel">{% trans "Günlük Detayları" %}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="log-details" id="logDetailsContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans "Kapat" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+<script src="{% static 'vendor/moment/moment.min.js' %}"></script>
+<script src="{% static 'vendor/daterangepicker/daterangepicker.min.js' %}"></script>
+<script src="{% static 'vendor/select2/select2.min.js' %}"></script>
+
+<script>
+    $(document).ready(function() {
+        // URL parametrelerini kontrol et ve sekmeyi ayarla
+        var urlParams = new URLSearchParams(window.location.search);
+        var tab = urlParams.get('tab');
+        if (tab === 'fetch') {
+            $('#fetch-tab').tab('show');
+        }
+        
+        // Sekme değiştiğinde URL'yi güncelle
+        $('a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
+            var id = $(e.target).attr('id');
+            if (id === 'fetch-tab') {
+                history.replaceState(null, null, '?tab=fetch');
+            } else {
+                history.replaceState(null, null, '?tab=audit');
+            }
+        });
+        
+        // DataTables inicializasyonu
+        $('#auditLogTable').DataTable({
+            language: {
+                url: '{% static "vendor/datatables/tr_TR.json" %}'
+            },
+            order: [[0, 'desc']],
+            columnDefs: [
+                { orderable: false, targets: 6 }
+            ]
+        });
+        
+        $('#fetchLogTable').DataTable({
+            language: {
+                url: '{% static "vendor/datatables/tr_TR.json" %}'
+            },
+            order: [[0, 'desc']],
+            columnDefs: [
+                { orderable: false, targets: 7 }
+            ]
+        });
+        
+        // DateRangePicker inicializasyonu
+        $('#auditDateFilter, #fetchDateFilter').daterangepicker({
+            locale: {
+                format: 'DD.MM.YYYY',
+                applyLabel: '{% trans "Uygula" %}',
+                cancelLabel: '{% trans "İptal" %}',
+                fromLabel: '{% trans "Başlangıç" %}',
+                toLabel: '{% trans "Bitiş" %}',
+                customRangeLabel: '{% trans "Özel Aralık" %}',
+                daysOfWeek: ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'],
+                monthNames: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'],
+                firstDay: 1
+            },
+            autoUpdateInput: false,
+            ranges: {
+                '{% trans "Bugün" %}': [moment(), moment()],
+                '{% trans "Dün" %}': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                '{% trans "Son 7 Gün" %}': [moment().subtract(6, 'days'), moment()],
+                '{% trans "Son 30 Gün" %}': [moment().subtract(29, 'days'), moment()],
+                '{% trans "Bu Ay" %}': [moment().startOf('month'), moment().endOf('month')],
+                '{% trans "Geçen Ay" %}': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+            }
+        });
+        
+        // DateRangePicker seçim olayı
+        $('#auditDateFilter, #fetchDateFilter').on('apply.daterangepicker', function(ev, picker) {
+            $(this).val(picker.startDate.format('DD.MM.YYYY') + ' - ' + picker.endDate.format('DD.MM.YYYY'));
+        });
+        
+        $('#auditDateFilter, #fetchDateFilter').on('cancel.daterangepicker', function(ev, picker) {
+            $(this).val('');
+        });
+        
+        // Select2 inicializasyonu
+        $('#auditUserFilter, #fetchSourceFilter').select2({
+            placeholder: '{% trans "Seçiniz" %}',
+            allowClear: true,
+            width: '100%'
+        });
+        
+        // Log detaylarını görüntüleme
+        $('.view-log-details').on('click', function() {
+            var details = $(this).data('details');
+            try {
+                // JSON formatında ise güzelleştir
+                var jsonDetails = JSON.parse(details);
+                details = JSON.stringify(jsonDetails, null, 2);
+            } catch (e) {
+                // JSON değilse olduğu gibi göster
+            }
+            $('#logDetailsContent').text(details);
+        });
+    });
+</script>
+{% endblock %}

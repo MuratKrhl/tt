@@ -1,0 +1,488 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}
+    {% if form.instance.id %}
+        {% trans "Veri Kaynağı Düzenle" %} - {{ form.instance.name }}
+    {% else %}
+        {% trans "Yeni Veri Kaynağı Oluştur" %}
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'vendor/jsoneditor/jsoneditor.min.css' %}">
+<style>
+    #jsoneditor {
+        height: 400px;
+    }
+    .error-message {
+        color: #e74a3b;
+        font-size: 80%;
+        margin-top: 0.25rem;
+    }
+    .help-text {
+        color: #858796;
+        font-size: 80%;
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Başlık -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            {% if form.instance.id %}
+                {% trans "Veri Kaynağı Düzenle" %} - {{ form.instance.name }}
+            {% else %}
+                {% trans "Yeni Veri Kaynağı Oluştur" %}
+            {% endif %}
+        </h1>
+        <a href="{% url 'data_source_list' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50 mr-1"></i> {% trans "Listeye Dön" %}
+        </a>
+    </div>
+
+    <!-- Form Kartı -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                {% if form.instance.id %}
+                    {% trans "Veri Kaynağı Bilgilerini Düzenle" %}
+                {% else %}
+                    {% trans "Veri Kaynağı Bilgileri" %}
+                {% endif %}
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="post" id="dataSourceForm">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.name.id_for_label }}">{% trans "İsim" %}</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.name.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if form.name.help_text %}
+                        <small class="form-text text-muted">{{ form.name.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.department.id_for_label }}">{% trans "Bölüm" %}</label>
+                        {{ form.department }}
+                        {% if form.department.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.department.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if form.department.help_text %}
+                        <small class="form-text text-muted">{{ form.department.help_text }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.source_type.id_for_label }}">{% trans "Kaynak Tipi" %}</label>
+                        {{ form.source_type }}
+                        {% if form.source_type.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.source_type.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if form.source_type.help_text %}
+                        <small class="form-text text-muted">{{ form.source_type.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.url.id_for_label }}">{% trans "URL" %}</label>
+                        {{ form.url }}
+                        {% if form.url.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.url.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if form.url.help_text %}
+                        <small class="form-text text-muted">{{ form.url.help_text }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="jsoneditor">{% trans "Kolon Eşleştirme" %}</label>
+                    <div id="jsoneditor"></div>
+                    {{ form.column_mapping }}
+                    {% if form.column_mapping.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.column_mapping.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <div class="help-text">
+                        {% trans "Kaynak dosyadaki kolon başlıklarını sistem alanlarıyla eşleştirin. Örnek: {"Doktor Adı": "doctor_name", "Tarih": "date", "Başlangıç": "start_time", "Bitiş": "end_time"}" %}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.fetch_interval.id_for_label }}">{% trans "Çekme Aralığı (saat)" %}</label>
+                        {{ form.fetch_interval }}
+                        {% if form.fetch_interval.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.fetch_interval.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if form.fetch_interval.help_text %}
+                        <small class="form-text text-muted">{{ form.fetch_interval.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.last_fetch.id_for_label }}">{% trans "Son Çekme Zamanı" %}</label>
+                        {{ form.last_fetch }}
+                        {% if form.last_fetch.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.last_fetch.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if form.last_fetch.help_text %}
+                        <small class="form-text text-muted">{{ form.last_fetch.help_text }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <div class="custom-control custom-checkbox">
+                        {{ form.is_active }}
+                        <label class="custom-control-label" for="{{ form.is_active.id_for_label }}">{% trans "Aktif" %}</label>
+                    </div>
+                    {% if form.is_active.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.is_active.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if form.is_active.help_text %}
+                    <small class="form-text text-muted">{{ form.is_active.help_text }}</small>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.notes.id_for_label }}">{% trans "Notlar" %}</label>
+                    {{ form.notes }}
+                    {% if form.notes.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.notes.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if form.notes.help_text %}
+                    <small class="form-text text-muted">{{ form.notes.help_text }}</small>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group text-right">
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='{% url "data_source_list" %}'">
+                        {% trans "İptal" %}
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        {% if form.instance.id %}
+                            {% trans "Güncelle" %}
+                        {% else %}
+                            {% trans "Oluştur" %}
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if form.instance.id %}
+    <!-- Veri Çekme Geçmişi Kartı -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Veri Çekme Geçmişi" %}</h6>
+            <div>
+                <button class="btn btn-info btn-sm" id="fetchNowBtn" data-id="{{ form.instance.id }}">
+                    <i class="fas fa-sync fa-sm"></i> {% trans "Şimdi Çek" %}
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="fetchLogsTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Tarih" %}</th>
+                            <th>{% trans "Durum" %}</th>
+                            <th>{% trans "Süre (sn)" %}</th>
+                            <th>{% trans "Eklenen Nöbet" %}</th>
+                            <th>{% trans "Hata Mesajı" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in fetch_logs %}
+                        <tr>
+                            <td>{{ log.timestamp|date:"d.m.Y H:i:s" }}</td>
+                            <td>
+                                {% if log.status == 'success' %}
+                                <span class="badge badge-success">{% trans "Başarılı" %}</span>
+                                {% elif log.status == 'error' %}
+                                <span class="badge badge-danger">{% trans "Hata" %}</span>
+                                {% elif log.status == 'warning' %}
+                                <span class="badge badge-warning">{% trans "Uyarı" %}</span>
+                                {% else %}
+                                <span class="badge badge-secondary">{{ log.status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ log.duration|floatformat:2 }}</td>
+                            <td>{{ log.shifts_added }}</td>
+                            <td>{{ log.error_message|default:"-" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">{% trans "Henüz veri çekme işlemi yapılmamış." %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/jsoneditor/jsoneditor.min.js' %}"></script>
+<script src="{% static 'vendor/sweetalert2/sweetalert2.all.min.js' %}"></script>
+
+<script>
+    $(document).ready(function() {
+        // Form alanlarını düzenle
+        $('#{{ form.name.id_for_label }}').addClass('form-control');
+        $('#{{ form.department.id_for_label }}').addClass('form-control');
+        $('#{{ form.source_type.id_for_label }}').addClass('form-control');
+        $('#{{ form.url.id_for_label }}').addClass('form-control');
+        $('#{{ form.fetch_interval.id_for_label }}').addClass('form-control');
+        $('#{{ form.last_fetch.id_for_label }}').addClass('form-control').attr('readonly', true);
+        $('#{{ form.notes.id_for_label }}').addClass('form-control');
+        $('#{{ form.is_active.id_for_label }}').addClass('custom-control-input');
+        $('#{{ form.column_mapping.id_for_label }}').hide();
+
+        // JSON Editor oluştur
+        var container = document.getElementById('jsoneditor');
+        var options = {
+            mode: 'tree',
+            modes: ['tree', 'view', 'form', 'code', 'text'],
+            onChangeJSON: function(json) {
+                $('#{{ form.column_mapping.id_for_label }}').val(JSON.stringify(json));
+            },
+            onError: function(err) {
+                console.error('JSON Editor error:', err);
+            }
+        };
+        var editor = new JSONEditor(container, options);
+
+        // Mevcut değeri yükle
+        try {
+            var initialValue = $('#{{ form.column_mapping.id_for_label }}').val();
+            if (initialValue) {
+                editor.set(JSON.parse(initialValue));
+            } else {
+                // Varsayılan şablon
+                editor.set({
+                    "Doktor Adı": "doctor_name",
+                    "Tarih": "date",
+                    "Başlangıç": "start_time",
+                    "Bitiş": "end_time",
+                    "Notlar": "notes"
+                });
+            }
+        } catch (e) {
+            console.error('JSON parse error:', e);
+            // Hata durumunda boş bir nesne göster
+            editor.set({});
+        }
+
+        // Kaynak tipi değiştiğinde örnek şablonu güncelle
+        $('#{{ form.source_type.id_for_label }}').on('change', function() {
+            var sourceType = $(this).val();
+            var templateMapping = {};
+            
+            switch(sourceType) {
+                case 'csv':
+                case 'excel':
+                    templateMapping = {
+                        "Doktor Adı": "doctor_name",
+                        "Tarih": "date",
+                        "Başlangıç": "start_time",
+                        "Bitiş": "end_time",
+                        "Notlar": "notes"
+                    };
+                    break;
+                case 'html':
+                    templateMapping = {
+                        "Doktor": "doctor_name",
+                        "Nöbet Tarihi": "date",
+                        "Saat (Başlangıç)": "start_time",
+                        "Saat (Bitiş)": "end_time",
+                        "Açıklama": "notes"
+                    };
+                    break;
+                case 'pdf':
+                    templateMapping = {
+                        "Hekim": "doctor_name",
+                        "Tarih": "date",
+                        "Başlangıç Saati": "start_time",
+                        "Bitiş Saati": "end_time",
+                        "Not": "notes"
+                    };
+                    break;
+                default:
+                    templateMapping = {};
+            }
+            
+            // Mevcut değeri kontrol et, boşsa şablonu yükle
+            var currentValue = editor.get();
+            if (!currentValue || Object.keys(currentValue).length === 0) {
+                editor.set(templateMapping);
+            }
+        });
+
+        // Form gönderimi
+        $('#dataSourceForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            // JSON doğruluğunu kontrol et
+            try {
+                var jsonValue = editor.get();
+                $('#{{ form.column_mapping.id_for_label }}').val(JSON.stringify(jsonValue));
+            } catch (e) {
+                Swal.fire({
+                    title: '{% trans "Hata!" %}',
+                    text: '{% trans "Kolon eşleştirme JSON formatı geçersiz." %}',
+                    icon: 'error',
+                    confirmButtonText: '{% trans "Tamam" %}'
+                });
+                return;
+            }
+            
+            var form = $(this);
+            var url = form.attr('action');
+            
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: form.serialize(),
+                success: function(response) {
+                    Swal.fire({
+                        title: '{% trans "Başarılı!" %}',
+                        text: '{% trans "Veri kaynağı başarıyla kaydedildi." %}',
+                        icon: 'success',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    }).then(function() {
+                        if (response.redirect_url) {
+                            window.location.href = response.redirect_url;
+                        } else {
+                            window.location.href = '{% url "data_source_list" %}';
+                        }
+                    });
+                },
+                error: function(xhr, status, error) {
+                    var errorMessage = '{% trans "Veri kaynağı kaydedilirken bir hata oluştu." %}';
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        errorMessage = xhr.responseJSON.errors.join('\n');
+                    }
+                    
+                    Swal.fire({
+                        title: '{% trans "Hata!" %}',
+                        text: errorMessage,
+                        icon: 'error',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    });
+                }
+            });
+        });
+
+        {% if form.instance.id %}
+        // Şimdi Çek butonu
+        $('#fetchNowBtn').on('click', function() {
+            var dataSourceId = $(this).data('id');
+            var url = '{% url "data_source_fetch" 0 %}'.replace('0', dataSourceId);
+            
+            Swal.fire({
+                title: '{% trans "Veri Çekiliyor..." %}',
+                text: '{% trans "Veri kaynağından veriler çekiliyor, lütfen bekleyin." %}',
+                icon: 'info',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                onBeforeOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    Swal.fire({
+                        title: '{% trans "Başarılı!" %}',
+                        text: response.message,
+                        icon: 'success',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    }).then(function() {
+                        window.location.reload();
+                    });
+                },
+                error: function(xhr, status, error) {
+                    var errorMessage = '{% trans "Veri çekilirken bir hata oluştu." %}';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMessage = xhr.responseJSON.error;
+                    }
+                    
+                    Swal.fire({
+                        title: '{% trans "Hata!" %}',
+                        text: errorMessage,
+                        icon: 'error',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    });
+                }
+            });
+        });
+        {% endif %}
+    });
+</script>
+{% endblock %}

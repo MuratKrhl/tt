@@ -1,0 +1,356 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ announcement.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0 d-flex justify-content-between align-items-center">
+                    <div>
+                        <a href="{% url 'announcement_dashboard' %}" class="btn btn-outline-secondary btn-sm me-2">
+                            <i class="fas fa-arrow-left"></i> Geri
+                        </a>
+                        <h6 class="d-inline">Duyuru Detayı</h6>
+                    </div>
+                    <div>
+                        {% if perms.announcements.change_announcement %}
+                        <a href="{% url 'announcement_update' announcement.id %}" class="btn btn-info btn-sm me-2" data-bs-toggle="modal" data-bs-target="#announcementModal">
+                            <i class="fas fa-edit"></i> Düzenle
+                        </a>
+                        {% endif %}
+                        
+                        {% if perms.announcements.change_announcement %}
+                            {% if announcement.status == 'draft' %}
+                            <form action="{% url 'announcement_publish' announcement.id %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success btn-sm me-2">
+                                    <i class="fas fa-check"></i> Yayınla
+                                </button>
+                            </form>
+                            {% elif announcement.status == 'published' %}
+                            <form action="{% url 'announcement_archive' announcement.id %}" method="post" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-warning btn-sm me-2">
+                                    <i class="fas fa-archive"></i> Arşivle
+                                </button>
+                            </form>
+                            {% endif %}
+                        {% endif %}
+                        
+                        {% if perms.announcements.delete_announcement %}
+                        <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="fas fa-trash"></i> Sil
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">{{ announcement.title }}</h3>
+                            <div class="d-flex align-items-center mt-2">
+                                <span class="badge badge-sm bg-gradient-{{ announcement.get_type_badge }} me-2">
+                                    {{ announcement.get_announcement_type_display }}
+                                </span>
+                                <span class="badge badge-sm bg-gradient-{{ announcement.get_priority_color }} me-2">
+                                    {{ announcement.get_priority_display }}
+                                </span>
+                                <span class="badge badge-sm bg-gradient-{{ announcement.get_status_badge }} me-2">
+                                    {{ announcement.get_status_display }}
+                                </span>
+                                {% if announcement.pinned %}
+                                <span class="badge badge-sm bg-gradient-warning">
+                                    <i class="fas fa-thumbtack me-1"></i> Sabitlenmiş
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <p class="text-sm mb-0">Ürün: <span class="font-weight-bold">{{ announcement.product }}</span></p>
+                            <p class="text-sm mb-0">Yazar: <span class="font-weight-bold">{{ announcement.author.get_full_name|default:announcement.author.username }}</span></p>
+                            <p class="text-sm mb-0">Oluşturulma: <span class="font-weight-bold">{{ announcement.created_at|date:"d.m.Y H:i" }}</span></p>
+                            <p class="text-sm mb-0">Yayın: <span class="font-weight-bold">{{ announcement.start_date|date:"d.m.Y H:i" }} - {{ announcement.end_date|date:"d.m.Y H:i" }}</span></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Duyuru İçeriği -->
+                    <div class="announcement-content mb-4">
+                        {{ announcement.content|safe }}
+                    </div>
+                    
+                    <!-- Etiketler -->
+                    {% if announcement.tags.exists %}
+                    <div class="mb-4">
+                        <h6 class="text-uppercase text-body text-xs font-weight-bolder">Etiketler</h6>
+                        <div>
+                            {% for tag in announcement.tags.all %}
+                            <span class="badge bg-gradient-light text-dark me-2 mb-2">{{ tag.name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Ekli Dosyalar -->
+                    {% if announcement.files.exists %}
+                    <div class="mb-4">
+                        <h6 class="text-uppercase text-body text-xs font-weight-bolder">Ekli Dosyalar</h6>
+                        <div class="table-responsive">
+                            <table class="table align-items-center mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Dosya Adı</th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Yüklenme Tarihi</th>
+                                        <th class="text-secondary opacity-7"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for file in announcement.files.all %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex px-2 py-1">
+                                                <div>
+                                                    <i class="fas fa-file text-primary me-3"></i>
+                                                </div>
+                                                <div class="d-flex flex-column justify-content-center">
+                                                    <h6 class="mb-0 text-sm">{{ file.file_name }}</h6>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <p class="text-xs text-secondary mb-0">{{ file.uploaded_at|date:"d.m.Y H:i" }}</p>
+                                        </td>
+                                        <td class="align-middle">
+                                            <a href="{{ file.file.url }}" class="btn btn-link text-secondary mb-0" target="_blank">
+                                                <i class="fas fa-download" data-bs-toggle="tooltip" title="İndir"></i>
+                                            </a>
+                                            {% if perms.announcements.delete_announcementfile %}
+                                            <a href="#" class="btn btn-link text-danger mb-0" data-bs-toggle="modal" data-bs-target="#deleteFileModal{{ file.id }}">
+                                                <i class="fas fa-trash" data-bs-toggle="tooltip" title="Sil"></i>
+                                            </a>
+                                            
+                                            <!-- Dosya Silme Onay Modalı -->
+                                            <div class="modal fade" id="deleteFileModal{{ file.id }}" tabindex="-1" role="dialog" aria-labelledby="deleteFileModalLabel{{ file.id }}" aria-hidden="true">
+                                                <div class="modal-dialog" role="document">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="deleteFileModalLabel{{ file.id }}">Dosya Silme Onayı</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p>"{{ file.file_name }}" dosyasını silmek istediğinizden emin misiniz?</p>
+                                                            <p class="text-danger">Bu işlem geri alınamaz!</p>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                                                            <form action="{% url 'file_delete' file.id %}" method="post" style="display: inline;">
+                                                                {% csrf_token %}
+                                                                <button type="submit" class="btn btn-danger">Sil</button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Versiyon Geçmişi -->
+                    {% if perms.announcements.view_historicalannouncement and announcement.history.count > 1 %}
+                    <div class="mb-4">
+                        <h6 class="text-uppercase text-body text-xs font-weight-bolder">Değişiklik Geçmişi</h6>
+                        <div class="table-responsive">
+                            <table class="table align-items-center mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Tarih</th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Kullanıcı</th>
+                                        <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Durum</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for history in announcement.history.all %}
+                                    <tr>
+                                        <td>
+                                            <p class="text-xs font-weight-bold mb-0">{{ history.history_date|date:"d.m.Y H:i" }}</p>
+                                        </td>
+                                        <td>
+                                            <p class="text-xs text-secondary mb-0">{{ history.history_user.get_full_name|default:history.history_user.username|default:"Sistem" }}</p>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-sm bg-gradient-{{ history.get_status_badge }}">
+                                                {{ history.get_status_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Duyuru Düzenleme Modal -->
+<div class="modal fade" id="announcementModal" tabindex="-1" role="dialog" aria-labelledby="announcementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="announcementModalLabel">Duyuru Düzenle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent">
+                    <div class="text-center p-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Yükleniyor...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Duyuru Silme Onay Modalı -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Duyuru Silme Onayı</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>"{{ announcement.title }}" başlıklı duyuruyu silmek istediğinizden emin misiniz?</p>
+                <p class="text-danger">Bu işlem geri alınamaz!</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <form action="{% url 'announcement_delete' announcement.id %}" method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Sil</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Tooltips'i etkinleştir
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+        
+        // Modal açıldığında form içeriğini yükle
+        $('#announcementModal').on('show.bs.modal', function (e) {
+            var url = $(e.relatedTarget).attr('href');
+            $('#modalContent').load(url, function() {
+                // CKEditor'ü başlat
+                if (typeof CKEDITOR !== 'undefined') {
+                    CKEDITOR.replace('id_content');
+                }
+                
+                // DateTimePicker'ı başlat
+                $('.datetimepicker').datetimepicker({
+                    format: 'DD.MM.YYYY HH:mm',
+                    locale: 'tr',
+                    icons: {
+                        time: "fa fa-clock",
+                        date: "fa fa-calendar",
+                        up: "fa fa-chevron-up",
+                        down: "fa fa-chevron-down",
+                        previous: 'fa fa-chevron-left',
+                        next: 'fa fa-chevron-right',
+                        today: 'fa fa-screenshot',
+                        clear: 'fa fa-trash',
+                        close: 'fa fa-remove'
+                    }
+                });
+            });
+        });
+        
+        // Form gönderimi
+        $(document).on('submit', '#announcementForm', function(e) {
+            e.preventDefault();
+            
+            // CKEditor içeriğini güncelle
+            if (typeof CKEDITOR !== 'undefined') {
+                for (instance in CKEDITOR.instances) {
+                    CKEDITOR.instances[instance].updateElement();
+                }
+            }
+            
+            var formData = new FormData(this);
+            
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    $('#announcementModal').modal('hide');
+                    
+                    // Başarılı mesajı göster
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Başarılı!',
+                        text: response.message,
+                        confirmButtonText: 'Tamam'
+                    }).then((result) => {
+                        // Sayfayı yenile veya yönlendir
+                        if (response.redirect_url) {
+                            window.location.href = response.redirect_url;
+                        } else {
+                            window.location.reload();
+                        }
+                    });
+                },
+                error: function(xhr) {
+                    var errors = JSON.parse(xhr.responseJSON.errors);
+                    var errorMessage = '';
+                    
+                    // Hata mesajlarını birleştir
+                    $.each(errors, function(field, messages) {
+                        $.each(messages, function(index, message) {
+                            errorMessage += field + ': ' + message + '<br>';
+                        });
+                    });
+                    
+                    // Hata mesajını göster
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Hata!',
+                        html: errorMessage,
+                        confirmButtonText: 'Tamam'
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

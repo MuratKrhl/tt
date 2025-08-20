@@ -1,0 +1,486 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Dosya Yükle" %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'vendor/daterangepicker/daterangepicker.css' %}">
+<link rel="stylesheet" href="{% static 'vendor/select2/select2.min.css' %}">
+<style>
+    .file-upload-wrapper {
+        position: relative;
+        width: 100%;
+        height: 200px;
+        border: 2px dashed #4e73df;
+        border-radius: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        background-color: #f8f9fc;
+        transition: all 0.3s ease;
+    }
+    
+    .file-upload-wrapper:hover {
+        background-color: #eaecf4;
+        cursor: pointer;
+    }
+    
+    .file-upload-message {
+        text-align: center;
+        color: #858796;
+    }
+    
+    .file-upload-message i {
+        font-size: 3rem;
+        color: #4e73df;
+        margin-bottom: 1rem;
+        display: block;
+    }
+    
+    .file-upload-input {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+    
+    .file-details {
+        display: none;
+        margin-top: 1rem;
+    }
+    
+    .file-name {
+        font-weight: bold;
+        word-break: break-all;
+    }
+    
+    .file-size {
+        color: #858796;
+        font-size: 0.875rem;
+    }
+    
+    .file-remove {
+        color: #e74a3b;
+        cursor: pointer;
+        margin-left: 0.5rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Başlık -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{% trans "Dosya Yükle" %}</h1>
+        <a href="{% url 'data_source_list' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50 mr-1"></i> {% trans "Veri Kaynaklarına Dön" %}
+        </a>
+    </div>
+
+    <!-- Form Kartı -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Nöbet Listesi Dosyası Yükle" %}</h6>
+        </div>
+        <div class="card-body">
+            <form method="post" id="fileUploadForm" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.title.id_for_label }}">{% trans "Başlık" %}</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.title.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if form.title.help_text %}
+                        <small class="form-text text-muted">{{ form.title.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.department.id_for_label }}">{% trans "Bölüm" %}</label>
+                        {{ form.department }}
+                        {% if form.department.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.department.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if form.department.help_text %}
+                        <small class="form-text text-muted">{{ form.department.help_text }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.start_date.id_for_label }}">{% trans "Başlangıç Tarihi" %}</label>
+                        {{ form.start_date }}
+                        {% if form.start_date.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.start_date.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if form.start_date.help_text %}
+                        <small class="form-text text-muted">{{ form.start_date.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.end_date.id_for_label }}">{% trans "Bitiş Tarihi" %}</label>
+                        {{ form.end_date }}
+                        {% if form.end_date.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.end_date.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if form.end_date.help_text %}
+                        <small class="form-text text-muted">{{ form.end_date.help_text }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.file.id_for_label }}">{% trans "Dosya" %}</label>
+                    <div class="file-upload-wrapper">
+                        <div class="file-upload-message">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>{% trans "Dosyayı buraya sürükleyin veya seçmek için tıklayın" %}</p>
+                            <small>{% trans "Desteklenen formatlar: CSV, Excel, PDF" %}</small>
+                        </div>
+                        {{ form.file }}
+                    </div>
+                    <div class="file-details">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <div class="file-name"></div>
+                                <div class="file-size"></div>
+                            </div>
+                            <div class="file-remove">
+                                <i class="fas fa-times"></i>
+                            </div>
+                        </div>
+                    </div>
+                    {% if form.file.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.file.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if form.file.help_text %}
+                    <small class="form-text text-muted">{{ form.file.help_text }}</small>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.column_mapping.id_for_label }}">{% trans "Kolon Eşleştirme" %}</label>
+                    {{ form.column_mapping }}
+                    {% if form.column_mapping.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.column_mapping.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <small class="form-text text-muted">
+                        {% trans "Dosyanızdaki kolon başlıklarını sistem alanlarıyla eşleştirin. Örnek: {"Doktor Adı": "doctor_name", "Tarih": "date", "Başlangıç": "start_time", "Bitiş": "end_time"}" %}
+                        <br>
+                        {% trans "Boş bırakırsanız, sistem otomatik olarak eşleştirmeye çalışacaktır." %}
+                    </small>
+                </div>
+                
+                <div class="form-group">
+                    <div class="custom-control custom-checkbox">
+                        {{ form.is_published }}
+                        <label class="custom-control-label" for="{{ form.is_published.id_for_label }}">{% trans "Yayınla" %}</label>
+                    </div>
+                    {% if form.is_published.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.is_published.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if form.is_published.help_text %}
+                    <small class="form-text text-muted">{{ form.is_published.help_text }}</small>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group text-right">
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='{% url "data_source_list" %}'">
+                        {% trans "İptal" %}
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload mr-1"></i> {% trans "Yükle" %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/daterangepicker/moment.min.js' %}"></script>
+<script src="{% static 'vendor/daterangepicker/daterangepicker.js' %}"></script>
+<script src="{% static 'vendor/select2/select2.min.js' %}"></script>
+<script src="{% static 'vendor/sweetalert2/sweetalert2.all.min.js' %}"></script>
+
+<script>
+    $(document).ready(function() {
+        // Form alanlarını düzenle
+        $('#{{ form.title.id_for_label }}').addClass('form-control');
+        $('#{{ form.department.id_for_label }}').addClass('form-control select2');
+        $('#{{ form.start_date.id_for_label }}').addClass('form-control datepicker');
+        $('#{{ form.end_date.id_for_label }}').addClass('form-control datepicker');
+        $('#{{ form.file.id_for_label }}').addClass('file-upload-input');
+        $('#{{ form.column_mapping.id_for_label }}').addClass('form-control');
+        $('#{{ form.is_published.id_for_label }}').addClass('custom-control-input');
+
+        // Select2 inicializasyonu
+        $('.select2').select2({
+            placeholder: "{% trans 'Seçiniz...' %}",
+            allowClear: true
+        });
+
+        // DatePicker inicializasyonu
+        $('.datepicker').daterangepicker({
+            singleDatePicker: true,
+            showDropdowns: true,
+            autoUpdateInput: true,
+            locale: {
+                format: 'YYYY-MM-DD',
+                applyLabel: '{% trans "Uygula" %}',
+                cancelLabel: '{% trans "İptal" %}',
+                daysOfWeek: ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'],
+                monthNames: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'],
+                firstDay: 1
+            }
+        });
+
+        // Dosya yükleme işlemleri
+        $('#{{ form.file.id_for_label }}').on('change', function(e) {
+            var file = e.target.files[0];
+            if (file) {
+                // Dosya adı ve boyutunu göster
+                $('.file-name').text(file.name);
+                $('.file-size').text(formatFileSize(file.size));
+                $('.file-details').show();
+                $('.file-upload-message').hide();
+                
+                // Dosya tipine göre başlık ve tarih aralığı önerisi
+                suggestTitleAndDates(file.name);
+            }
+        });
+        
+        // Dosya kaldırma
+        $('.file-remove').on('click', function() {
+            $('#{{ form.file.id_for_label }}').val('');
+            $('.file-details').hide();
+            $('.file-upload-message').show();
+        });
+        
+        // Dosya sürükle bırak
+        $('.file-upload-wrapper').on('dragover', function(e) {
+            e.preventDefault();
+            $(this).addClass('bg-light');
+        }).on('dragleave', function(e) {
+            e.preventDefault();
+            $(this).removeClass('bg-light');
+        }).on('drop', function(e) {
+            e.preventDefault();
+            $(this).removeClass('bg-light');
+            
+            var file = e.originalEvent.dataTransfer.files[0];
+            if (file) {
+                $('#{{ form.file.id_for_label }}').prop('files', e.originalEvent.dataTransfer.files);
+                $('.file-name').text(file.name);
+                $('.file-size').text(formatFileSize(file.size));
+                $('.file-details').show();
+                $('.file-upload-message').hide();
+                
+                // Dosya tipine göre başlık ve tarih aralığı önerisi
+                suggestTitleAndDates(file.name);
+            }
+        });
+
+        // Form gönderimi
+        $('#fileUploadForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            // Dosya seçildi mi kontrol et
+            if (!$('#{{ form.file.id_for_label }}').val()) {
+                Swal.fire({
+                    title: '{% trans "Uyarı!" %}',
+                    text: '{% trans "Lütfen bir dosya seçin." %}',
+                    icon: 'warning',
+                    confirmButtonText: '{% trans "Tamam" %}'
+                });
+                return;
+            }
+            
+            var formData = new FormData(this);
+            
+            Swal.fire({
+                title: '{% trans "Dosya Yükleniyor..." %}',
+                text: '{% trans "Dosyanız yükleniyor ve işleniyor, lütfen bekleyin." %}',
+                icon: 'info',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                onBeforeOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            $.ajax({
+                url: '{% url "file_upload" %}',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    Swal.fire({
+                        title: '{% trans "Başarılı!" %}',
+                        text: response.message,
+                        icon: 'success',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    }).then(function() {
+                        if (response.redirect_url) {
+                            window.location.href = response.redirect_url;
+                        } else {
+                            window.location.href = '{% url "shift_list_view" %}';
+                        }
+                    });
+                },
+                error: function(xhr, status, error) {
+                    var errorMessage = '{% trans "Dosya yüklenirken bir hata oluştu." %}';
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        errorMessage = xhr.responseJSON.errors.join('\n');
+                    }
+                    
+                    Swal.fire({
+                        title: '{% trans "Hata!" %}',
+                        text: errorMessage,
+                        icon: 'error',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    });
+                }
+            });
+        });
+        
+        // Dosya boyutunu formatla
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Dosya adından başlık ve tarih aralığı öner
+        function suggestTitleAndDates(filename) {
+            // Dosya adından tarih çıkarmaya çalış
+            var datePattern = /(\d{2}[.-]\d{2}[.-]\d{4}|\d{4}[.-]\d{2}[.-]\d{2})/g;
+            var dates = filename.match(datePattern);
+            
+            // Dosya adından bölüm adı çıkarmaya çalış
+            var deptPattern = /(kardiyoloji|nöroloji|ortopedi|dahiliye|cerrahi|pediatri|göz|kbb|üroloji|kadın doğum|radyoloji|anestezi)/i;
+            var deptMatch = filename.match(deptPattern);
+            
+            // Başlık önerisi oluştur
+            var titleSuggestion = "";
+            if (deptMatch) {
+                var dept = deptMatch[0].charAt(0).toUpperCase() + deptMatch[0].slice(1);
+                titleSuggestion += dept + " ";
+            }
+            titleSuggestion += "Nöbet Listesi";
+            
+            if (dates && dates.length > 0) {
+                titleSuggestion += " - " + dates[0];
+                if (dates.length > 1) {
+                    titleSuggestion += " / " + dates[1];
+                }
+            }
+            
+            // Başlık alanı boşsa önerilen başlığı doldur
+            if (!$('#{{ form.title.id_for_label }}').val()) {
+                $('#{{ form.title.id_for_label }}').val(titleSuggestion);
+            }
+            
+            // Tarih alanları boşsa ve dosya adında tarih varsa doldur
+            if (dates && dates.length > 0) {
+                try {
+                    var firstDate = parseDate(dates[0]);
+                    if (firstDate && !$('#{{ form.start_date.id_for_label }}').val()) {
+                        $('#{{ form.start_date.id_for_label }}').val(formatDate(firstDate));
+                    }
+                    
+                    if (dates.length > 1) {
+                        var secondDate = parseDate(dates[1]);
+                        if (secondDate && !$('#{{ form.end_date.id_for_label }}').val()) {
+                            $('#{{ form.end_date.id_for_label }}').val(formatDate(secondDate));
+                        }
+                    } else if (firstDate && !$('#{{ form.end_date.id_for_label }}').val()) {
+                        // Tek tarih varsa, bitiş tarihi olarak 1 ay sonrasını öner
+                        var endDate = new Date(firstDate);
+                        endDate.setMonth(endDate.getMonth() + 1);
+                        $('#{{ form.end_date.id_for_label }}').val(formatDate(endDate));
+                    }
+                } catch (e) {
+                    console.error('Tarih ayrıştırma hatası:', e);
+                }
+            }
+        }
+        
+        // Tarih string'ini Date nesnesine çevir
+        function parseDate(dateStr) {
+            // DD.MM.YYYY veya YYYY.MM.DD formatlarını destekle
+            dateStr = dateStr.replace(/[-]/g, '.');
+            var parts = dateStr.split('.');
+            
+            if (parts.length === 3) {
+                if (parts[0].length === 4) {
+                    // YYYY.MM.DD formatı
+                    return new Date(parts[0], parts[1] - 1, parts[2]);
+                } else {
+                    // DD.MM.YYYY formatı
+                    return new Date(parts[2], parts[1] - 1, parts[0]);
+                }
+            }
+            
+            return null;
+        }
+        
+        // Date nesnesini YYYY-MM-DD formatına çevir
+        function formatDate(date) {
+            var year = date.getFullYear();
+            var month = (date.getMonth() + 1).toString().padStart(2, '0');
+            var day = date.getDate().toString().padStart(2, '0');
+            return year + '-' + month + '-' + day;
+        }
+    });
+</script>
+{% endblock %}

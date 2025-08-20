@@ -1,0 +1,351 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}
+    {% if doctor.id %}
+        {% trans "Doktor Düzenle" %}
+    {% else %}
+        {% trans "Yeni Doktor Ekle" %}
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'vendor/select2/select2.min.css' %}">
+<style>
+    .phone-format-hint {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Başlık -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            {% if doctor.id %}
+                {% trans "Doktor Düzenle" %}
+            {% else %}
+                {% trans "Yeni Doktor Ekle" %}
+            {% endif %}
+        </h1>
+        <a href="{% url 'doctor_list' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50 mr-1"></i> {% trans "Doktor Listesine Dön" %}
+        </a>
+    </div>
+
+    <!-- Form Kartı -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                {% if doctor.id %}
+                    {% trans "Doktor Bilgilerini Düzenle" %}
+                {% else %}
+                    {% trans "Doktor Bilgileri" %}
+                {% endif %}
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="post" id="doctorForm">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.first_name.id_for_label }}">{% trans "Ad" %} *</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.first_name.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if form.first_name.help_text %}
+                        <small class="form-text text-muted">{{ form.first_name.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.last_name.id_for_label }}">{% trans "Soyad" %} *</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.last_name.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if form.last_name.help_text %}
+                        <small class="form-text text-muted">{{ form.last_name.help_text }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.department.id_for_label }}">{% trans "Bölüm" %} *</label>
+                        {{ form.department }}
+                        {% if form.department.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.department.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if form.department.help_text %}
+                        <small class="form-text text-muted">{{ form.department.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.title.id_for_label }}">{% trans "Unvan" %}</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.title.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if form.title.help_text %}
+                        <small class="form-text text-muted">{{ form.title.help_text }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.phone.id_for_label }}">{% trans "Telefon" %}</label>
+                        {{ form.phone }}
+                        <div class="phone-format-hint">
+                            {% trans "Format: +90XXXXXXXXXX veya 05XXXXXXXXX" %}
+                        </div>
+                        {% if form.phone.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.phone.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if form.phone.help_text %}
+                        <small class="form-text text-muted">{{ form.phone.help_text }}</small>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.email.id_for_label }}">{% trans "E-posta" %}</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.email.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        {% if form.email.help_text %}
+                        <small class="form-text text-muted">{{ form.email.help_text }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.notes.id_for_label }}">{% trans "Notlar" %}</label>
+                    {{ form.notes }}
+                    {% if form.notes.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.notes.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if form.notes.help_text %}
+                    <small class="form-text text-muted">{{ form.notes.help_text }}</small>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <div class="custom-control custom-checkbox">
+                        {{ form.is_active }}
+                        <label class="custom-control-label" for="{{ form.is_active.id_for_label }}">{% trans "Aktif" %}</label>
+                    </div>
+                    {% if form.is_active.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.is_active.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% if form.is_active.help_text %}
+                    <small class="form-text text-muted">{{ form.is_active.help_text }}</small>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group text-right">
+                    <button type="button" class="btn btn-secondary" onclick="window.location.href='{% url "doctor_list" %}'">
+                        {% trans "İptal" %}
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        {% if doctor.id %}
+                            <i class="fas fa-save mr-1"></i> {% trans "Güncelle" %}
+                        {% else %}
+                            <i class="fas fa-plus mr-1"></i> {% trans "Ekle" %}
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/select2/select2.min.js' %}"></script>
+<script src="{% static 'vendor/sweetalert2/sweetalert2.all.min.js' %}"></script>
+
+<script>
+    $(document).ready(function() {
+        // Form alanlarını düzenle
+        $('#{{ form.first_name.id_for_label }}').addClass('form-control');
+        $('#{{ form.last_name.id_for_label }}').addClass('form-control');
+        $('#{{ form.department.id_for_label }}').addClass('form-control select2');
+        $('#{{ form.title.id_for_label }}').addClass('form-control');
+        $('#{{ form.phone.id_for_label }}').addClass('form-control');
+        $('#{{ form.email.id_for_label }}').addClass('form-control');
+        $('#{{ form.notes.id_for_label }}').addClass('form-control');
+        $('#{{ form.is_active.id_for_label }}').addClass('custom-control-input');
+
+        // Select2 inicializasyonu
+        $('.select2').select2({
+            placeholder: "{% trans 'Seçiniz...' %}",
+            allowClear: true
+        });
+
+        // Telefon numarası formatı kontrolü
+        $('#{{ form.phone.id_for_label }}').on('input', function() {
+            var phoneNumber = $(this).val();
+            // Sadece rakam ve + işareti kabul et
+            phoneNumber = phoneNumber.replace(/[^0-9+]/g, '');
+            
+            // Türkiye telefon numarası formatı kontrolü
+            if (phoneNumber.startsWith('0')) {
+                // 05XX... formatını +90 formatına çevir
+                if (phoneNumber.length > 1 && phoneNumber[1] === '5') {
+                    // İlk 0'ı kaldır ve +90 ekle
+                    phoneNumber = '+90' + phoneNumber.substring(1);
+                }
+            } else if (!phoneNumber.startsWith('+')) {
+                // + ile başlamıyorsa ve 0 ile de başlamıyorsa +90 ekle
+                if (phoneNumber && phoneNumber.length > 0) {
+                    phoneNumber = '+90' + phoneNumber;
+                }
+            }
+            
+            $(this).val(phoneNumber);
+        });
+
+        // Form gönderimi
+        $('#doctorForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            // Zorunlu alanları kontrol et
+            var isValid = true;
+            if (!$('#{{ form.first_name.id_for_label }}').val()) {
+                $('#{{ form.first_name.id_for_label }}').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#{{ form.first_name.id_for_label }}').removeClass('is-invalid');
+            }
+            
+            if (!$('#{{ form.last_name.id_for_label }}').val()) {
+                $('#{{ form.last_name.id_for_label }}').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#{{ form.last_name.id_for_label }}').removeClass('is-invalid');
+            }
+            
+            if (!$('#{{ form.department.id_for_label }}').val()) {
+                $('#{{ form.department.id_for_label }}').next('.select2-container').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#{{ form.department.id_for_label }}').next('.select2-container').removeClass('is-invalid');
+            }
+            
+            if (!isValid) {
+                Swal.fire({
+                    title: '{% trans "Uyarı!" %}',
+                    text: '{% trans "Lütfen zorunlu alanları doldurun." %}',
+                    icon: 'warning',
+                    confirmButtonText: '{% trans "Tamam" %}'
+                });
+                return;
+            }
+            
+            // Telefon numarası formatını kontrol et
+            var phoneNumber = $('#{{ form.phone.id_for_label }}').val();
+            if (phoneNumber) {
+                var phoneRegex = /^\+?[0-9]{10,15}$/;
+                if (!phoneRegex.test(phoneNumber.replace(/\s/g, ''))) {
+                    Swal.fire({
+                        title: '{% trans "Uyarı!" %}',
+                        text: '{% trans "Lütfen geçerli bir telefon numarası girin." %}',
+                        icon: 'warning',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    });
+                    return;
+                }
+            }
+            
+            // Form verilerini al
+            var formData = $(this).serialize();
+            
+            // AJAX ile form gönder
+            $.ajax({
+                url: '{% if doctor.id %}{% url "doctor_update" doctor.id %}{% else %}{% url "doctor_create" %}{% endif %}',
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        Swal.fire({
+                            title: '{% trans "Başarılı!" %}',
+                            text: response.message,
+                            icon: 'success',
+                            confirmButtonText: '{% trans "Tamam" %}'
+                        }).then(function() {
+                            window.location.href = '{% url "doctor_list" %}';
+                        });
+                    } else {
+                        Swal.fire({
+                            title: '{% trans "Hata!" %}',
+                            text: response.error || '{% trans "İşlem sırasında bir hata oluştu." %}',
+                            icon: 'error',
+                            confirmButtonText: '{% trans "Tamam" %}'
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    var errorMessage = '{% trans "İşlem sırasında bir hata oluştu." %}';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMessage = xhr.responseJSON.error;
+                    }
+                    
+                    Swal.fire({
+                        title: '{% trans "Hata!" %}',
+                        text: errorMessage,
+                        icon: 'error',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

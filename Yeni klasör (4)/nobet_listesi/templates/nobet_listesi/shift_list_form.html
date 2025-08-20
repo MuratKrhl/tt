@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}
+    {% if form.instance.id %}
+        {% trans "Nöbet Listesi Düzenle" %} - {{ form.instance.title }}
+    {% else %}
+        {% trans "Yeni Nöbet Listesi Oluştur" %}
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'vendor/daterangepicker/daterangepicker.css' %}">
+<link rel="stylesheet" href="{% static 'vendor/select2/select2.min.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Başlık -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            {% if form.instance.id %}
+                {% trans "Nöbet Listesi Düzenle" %} - {{ form.instance.title }}
+            {% else %}
+                {% trans "Yeni Nöbet Listesi Oluştur" %}
+            {% endif %}
+        </h1>
+        <a href="{% url 'shift_list_view' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50 mr-1"></i> {% trans "Listeye Dön" %}
+        </a>
+    </div>
+
+    <!-- Form Kartı -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                {% if form.instance.id %}
+                    {% trans "Nöbet Listesi Bilgilerini Düzenle" %}
+                {% else %}
+                    {% trans "Nöbet Listesi Bilgileri" %}
+                {% endif %}
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="post" id="shiftListForm">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                    {{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.title.id_for_label }}">{% trans "Başlık" %} <span class="text-danger">*</span></label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.title.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.department.id_for_label }}">{% trans "Bölüm" %} <span class="text-danger">*</span></label>
+                        {{ form.department }}
+                        {% if form.department.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.department.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.start_date.id_for_label }}">{% trans "Başlangıç Tarihi" %} <span class="text-danger">*</span></label>
+                        {{ form.start_date }}
+                        {% if form.start_date.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.start_date.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label for="{{ form.end_date.id_for_label }}">{% trans "Bitiş Tarihi" %} <span class="text-danger">*</span></label>
+                        {{ form.end_date }}
+                        {% if form.end_date.errors %}
+                        <div class="invalid-feedback d-block">
+                            {% for error in form.end_date.errors %}
+                            {{ error }}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="{{ form.description.id_for_label }}">{% trans "Açıklama" %}</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.description.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="form-group">
+                    <div class="custom-control custom-checkbox">
+                        {{ form.is_published }}
+                        <label class="custom-control-label" for="{{ form.is_published.id_for_label }}">{% trans "Yayınla" %}</label>
+                    </div>
+                    {% if form.is_published.errors %}
+                    <div class="invalid-feedback d-block">
+                        {% for error in form.is_published.errors %}
+                        {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    <small class="form-text text-muted">{% trans "Yayınlanan nöbet listeleri doktorlar tarafından görüntülenebilir." %}</small>
+                </div>
+                
+                <div class="form-group text-right">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save fa-sm text-white-50 mr-1"></i>
+                        {% if form.instance.id %}
+                            {% trans "Güncelle" %}
+                        {% else %}
+                            {% trans "Kaydet" %}
+                        {% endif %}
+                    </button>
+                    <a href="{% url 'shift_list_view' %}" class="btn btn-secondary">
+                        <i class="fas fa-times fa-sm text-white-50 mr-1"></i> {% trans "İptal" %}
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/daterangepicker/moment.min.js' %}"></script>
+<script src="{% static 'vendor/daterangepicker/daterangepicker.min.js' %}"></script>
+<script src="{% static 'vendor/select2/select2.min.js' %}"></script>
+<script src="{% static 'vendor/select2/i18n/tr.js' %}"></script>
+
+<script>
+    $(document).ready(function() {
+        // Select2 için bölüm seçimini etkinleştir
+        initSelect2();
+        
+        // Tarih seçicileri etkinleştir
+        initDatepickers();
+        
+        // Form doğrulama
+        $('#shiftListForm').on('submit', function(e) {
+            var isValid = true;
+            
+            // Gerekli alanları kontrol et
+            if ($('#id_title').val() === '') {
+                $('#id_title').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#id_title').removeClass('is-invalid');
+            }
+            
+            if ($('#id_department').val() === '') {
+                $('#id_department').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#id_department').removeClass('is-invalid');
+            }
+            
+            if ($('#id_start_date').val() === '') {
+                $('#id_start_date').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#id_start_date').removeClass('is-invalid');
+            }
+            
+            if ($('#id_end_date').val() === '') {
+                $('#id_end_date').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#id_end_date').removeClass('is-invalid');
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'error',
+                    title: '{% trans "Hata" %}',
+                    text: '{% trans "Lütfen gerekli alanları doldurun." %}',
+                    confirmButtonText: '{% trans "Tamam" %}'
+                });
+            }
+        });
+    });
+</script>
+{% endblock %}

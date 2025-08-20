@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Doktor Listesi" %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}">
+<link rel="stylesheet" href="{% static 'vendor/select2/select2.min.css' %}">
+<style>
+    .filter-card {
+        margin-bottom: 1rem;
+    }
+    
+    .filter-card .card-header {
+        cursor: pointer;
+    }
+    
+    .filter-body {
+        padding: 1rem;
+    }
+    
+    .badge-department {
+        background-color: #4e73df;
+        color: white;
+    }
+    
+    .badge-title {
+        background-color: #1cc88a;
+        color: white;
+    }
+    
+    .status-active {
+        color: #1cc88a;
+    }
+    
+    .status-inactive {
+        color: #e74a3b;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Başlık -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{% trans "Doktor Listesi" %}</h1>
+        <a href="{% url 'doctor_create' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> {% trans "Yeni Doktor Ekle" %}
+        </a>
+    </div>
+
+    <!-- Filtre Kartı -->
+    <div class="card shadow mb-4 filter-card">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between" id="filterToggle">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Filtreler" %}</h6>
+            <div class="dropdown no-arrow">
+                <a class="dropdown-toggle" href="#" role="button" id="filterDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="filterDropdown">
+                    <a class="dropdown-item" href="#" id="resetFilters">
+                        <i class="fas fa-trash fa-sm fa-fw mr-2 text-gray-400"></i>
+                        {% trans "Filtreleri Temizle" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="collapse filter-body" id="filterCollapse">
+            <form id="filterForm">
+                <div class="form-row">
+                    <div class="form-group col-md-4">
+                        <label for="filterName">{% trans "Ad Soyad" %}</label>
+                        <input type="text" class="form-control" id="filterName" placeholder="{% trans 'Ad veya soyad ara...' %}">
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="filterDepartment">{% trans "Bölüm" %}</label>
+                        <select class="form-control select2" id="filterDepartment" multiple>
+                            {% for department in departments %}
+                            <option value="{{ department.id }}">{{ department.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group col-md-4">
+                        <label for="filterStatus">{% trans "Durum" %}</label>
+                        <select class="form-control" id="filterStatus">
+                            <option value="">{% trans "Tümü" %}</option>
+                            <option value="active">{% trans "Aktif" %}</option>
+                            <option value="inactive">{% trans "Pasif" %}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group col-md-12 text-right">
+                        <button type="button" class="btn btn-secondary" id="clearFilters">
+                            <i class="fas fa-eraser mr-1"></i> {% trans "Temizle" %}
+                        </button>
+                        <button type="button" class="btn btn-primary" id="applyFilters">
+                            <i class="fas fa-filter mr-1"></i> {% trans "Filtrele" %}
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Doktor Listesi Kartı -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Doktorlar" %}</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="doctorTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Ad Soyad" %}</th>
+                            <th>{% trans "Bölüm" %}</th>
+                            <th>{% trans "Unvan" %}</th>
+                            <th>{% trans "İletişim" %}</th>
+                            <th>{% trans "Durum" %}</th>
+                            <th>{% trans "İşlemler" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for doctor in doctors %}
+                        <tr>
+                            <td>{{ doctor.get_full_name }}</td>
+                            <td>
+                                <span class="badge badge-department">{{ doctor.department.name }}</span>
+                            </td>
+                            <td>
+                                {% if doctor.title %}
+                                <span class="badge badge-title">{{ doctor.title }}</span>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if doctor.phone %}
+                                <i class="fas fa-phone-alt mr-1"></i> {{ doctor.phone }}<br>
+                                {% endif %}
+                                {% if doctor.email %}
+                                <i class="fas fa-envelope mr-1"></i> {{ doctor.email }}
+                                {% endif %}
+                                {% if not doctor.phone and not doctor.email %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if doctor.is_active %}
+                                <span class="status-active"><i class="fas fa-check-circle mr-1"></i> {% trans "Aktif" %}</span>
+                                {% else %}
+                                <span class="status-inactive"><i class="fas fa-times-circle mr-1"></i> {% trans "Pasif" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'doctor_update' doctor.id %}" class="btn btn-primary btn-sm" title="{% trans 'Düzenle' %}">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-danger btn-sm delete-doctor" data-id="{{ doctor.id }}" data-name="{{ doctor.get_full_name }}" title="{% trans 'Sil' %}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">{% trans "Kayıtlı doktor bulunamadı." %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Silme Onay Modalı -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">{% trans "Doktor Sil" %}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>{% trans "Bu doktoru silmek istediğinizden emin misiniz?" %}</p>
+                <p><strong id="doctorNameToDelete"></strong></p>
+                <p class="text-danger">{% trans "Bu işlem geri alınamaz ve doktorun tüm nöbet kayıtları etkilenebilir." %}</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans "İptal" %}</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">{% trans "Sil" %}</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+<script src="{% static 'vendor/select2/select2.min.js' %}"></script>
+<script src="{% static 'vendor/sweetalert2/sweetalert2.all.min.js' %}"></script>
+
+<script>
+    $(document).ready(function() {
+        // DataTables inicializasyonu
+        var table = $('#doctorTable').DataTable({
+            language: {
+                url: '{% static "vendor/datatables/tr_TR.json" %}'
+            },
+            order: [[0, 'asc']],
+            columnDefs: [
+                { orderable: false, targets: 5 }
+            ]
+        });
+        
+        // Select2 inicializasyonu
+        $('.select2').select2({
+            placeholder: "{% trans 'Seçiniz...' %}",
+            allowClear: true
+        });
+        
+        // Filtre panelini aç/kapat
+        $('#filterToggle').on('click', function() {
+            $('#filterCollapse').collapse('toggle');
+        });
+        
+        // Filtreleri uygula
+        $('#applyFilters').on('click', function() {
+            applyFilters();
+        });
+        
+        // Filtreleri temizle
+        $('#clearFilters, #resetFilters').on('click', function() {
+            $('#filterName').val('');
+            $('#filterDepartment').val(null).trigger('change');
+            $('#filterStatus').val('');
+            applyFilters();
+        });
+        
+        // Filtre fonksiyonu
+        function applyFilters() {
+            table.search('').columns().search('').draw();
+            
+            var nameFilter = $('#filterName').val();
+            var departmentFilter = $('#filterDepartment').val();
+            var statusFilter = $('#filterStatus').val();
+            
+            // Ad Soyad filtresi
+            if (nameFilter) {
+                table.column(0).search(nameFilter).draw();
+            }
+            
+            // Bölüm filtresi
+            if (departmentFilter && departmentFilter.length > 0) {
+                var departmentRegex = departmentFilter.map(function(dept) {
+                    return $('#filterDepartment option[value="' + dept + '"]').text();
+                }).join('|');
+                table.column(1).search(departmentRegex, true, false).draw();
+            }
+            
+            // Durum filtresi
+            if (statusFilter) {
+                var statusText = statusFilter === 'active' ? '{% trans "Aktif" %}' : '{% trans "Pasif" %}';
+                table.column(4).search(statusText).draw();
+            }
+        }
+        
+        // Doktor silme işlemi
+        $('.delete-doctor').on('click', function() {
+            var doctorId = $(this).data('id');
+            var doctorName = $(this).data('name');
+            
+            $('#doctorNameToDelete').text(doctorName);
+            $('#deleteModal').modal('show');
+            
+            $('#confirmDelete').off('click').on('click', function() {
+                $.ajax({
+                    url: '{% url "doctor_delete" 0 %}'.replace('0', doctorId),
+                    type: 'POST',
+                    data: {
+                        'csrfmiddlewaretoken': '{{ csrf_token }}'
+                    },
+                    dataType: 'json',
+                    success: function(response) {
+                        $('#deleteModal').modal('hide');
+                        
+                        if (response.success) {
+                            Swal.fire({
+                                title: '{% trans "Başarılı!" %}',
+                                text: response.message,
+                                icon: 'success',
+                                confirmButtonText: '{% trans "Tamam" %}'
+                            }).then(function() {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                title: '{% trans "Hata!" %}',
+                                text: response.error || '{% trans "Silme işlemi sırasında bir hata oluştu." %}',
+                                icon: 'error',
+                                confirmButtonText: '{% trans "Tamam" %}'
+                            });
+                        }
+                    },
+                    error: function() {
+                        $('#deleteModal').modal('hide');
+                        
+                        Swal.fire({
+                            title: '{% trans "Hata!" %}',
+                            text: '{% trans "Silme işlemi sırasında bir hata oluştu." %}',
+                            icon: 'error',
+                            confirmButtonText: '{% trans "Tamam" %}'
+                        });
+                    }
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

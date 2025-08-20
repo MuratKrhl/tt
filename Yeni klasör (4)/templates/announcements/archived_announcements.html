@@ -1,0 +1,383 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Arşivlenmiş Duyurular{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0 d-flex justify-content-between align-items-center">
+                    <div>
+                        <a href="{% url 'announcement_dashboard' %}" class="btn btn-outline-secondary btn-sm me-2">
+                            <i class="fas fa-arrow-left"></i> Dashboard
+                        </a>
+                        <h6 class="d-inline">Arşivlenmiş Duyurular</h6>
+                    </div>
+                    <div>
+                        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+                            <i class="fas fa-filter me-2"></i> Filtrele
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Filtre Bölümü -->
+                <div class="collapse" id="filterCollapse">
+                    <div class="card-body pt-0">
+                        <form method="get" action="{% url 'archived_announcements' %}" class="row g-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ filter_form.title.id_for_label }}" class="form-control-label">{{ filter_form.title.label }}</label>
+                                    {{ filter_form.title }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ filter_form.announcement_type.id_for_label }}" class="form-control-label">{{ filter_form.announcement_type.label }}</label>
+                                    {{ filter_form.announcement_type }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ filter_form.priority.id_for_label }}" class="form-control-label">{{ filter_form.priority.label }}</label>
+                                    {{ filter_form.priority }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ filter_form.product.id_for_label }}" class="form-control-label">{{ filter_form.product.label }}</label>
+                                    {{ filter_form.product }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ filter_form.tags.id_for_label }}" class="form-control-label">{{ filter_form.tags.label }}</label>
+                                    {{ filter_form.tags }}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ filter_form.date_range.id_for_label }}" class="form-control-label">{{ filter_form.date_range.label }}</label>
+                                    {{ filter_form.date_range }}
+                                </div>
+                            </div>
+                            <div class="col-12 text-end">
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-search me-2"></i> Ara
+                                </button>
+                                <a href="{% url 'archived_announcements' %}" class="btn btn-secondary btn-sm">
+                                    <i class="fas fa-undo me-2"></i> Sıfırla
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card-body px-0 pt-0 pb-2">
+                    <div class="table-responsive p-0">
+                        <table class="table align-items-center mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Başlık</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Tür</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Öncelik</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Ürün</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Arşiv Tarihi</th>
+                                    <th class="text-secondary opacity-7"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for announcement in announcements %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex px-2 py-1">
+                                            <div class="d-flex flex-column justify-content-center">
+                                                <h6 class="mb-0 text-sm">{{ announcement.title }}</h6>
+                                                <p class="text-xs text-secondary mb-0">{{ announcement.author.get_full_name|default:announcement.author.username }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-sm bg-gradient-{{ announcement.get_type_badge }}">
+                                            {{ announcement.get_announcement_type_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-sm bg-gradient-{{ announcement.get_priority_color }}">
+                                            {{ announcement.get_priority_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <p class="text-xs font-weight-bold mb-0">{{ announcement.product }}</p>
+                                    </td>
+                                    <td>
+                                        <p class="text-xs font-weight-bold mb-0">{{ announcement.updated_at|date:"d.m.Y H:i" }}</p>
+                                    </td>
+                                    <td class="align-middle">
+                                        <a href="{% url 'announcement_detail' announcement.id %}" class="btn btn-link text-secondary mb-0">
+                                            <i class="fas fa-eye" data-bs-toggle="tooltip" title="Görüntüle"></i>
+                                        </a>
+                                        {% if perms.announcements.change_announcement %}
+                                        <a href="{% url 'announcement_update' announcement.id %}" class="btn btn-link text-info mb-0" data-bs-toggle="modal" data-bs-target="#announcementModal">
+                                            <i class="fas fa-edit" data-bs-toggle="tooltip" title="Düzenle"></i>
+                                        </a>
+                                        {% endif %}
+                                        {% if perms.announcements.change_announcement %}
+                                        <form action="{% url 'announcement_publish' announcement.id %}" method="post" class="d-inline">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-link text-success mb-0">
+                                                <i class="fas fa-check" data-bs-toggle="tooltip" title="Yeniden Yayınla"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                        {% if perms.announcements.delete_announcement %}
+                                        <a href="#" class="btn btn-link text-danger mb-0" data-bs-toggle="modal" data-bs-target="#deleteModal{{ announcement.id }}">
+                                            <i class="fas fa-trash" data-bs-toggle="tooltip" title="Sil"></i>
+                                        </a>
+                                        
+                                        <!-- Silme Onay Modalı -->
+                                        <div class="modal fade" id="deleteModal{{ announcement.id }}" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel{{ announcement.id }}" aria-hidden="true">
+                                            <div class="modal-dialog" role="document">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title" id="deleteModalLabel{{ announcement.id }}">Duyuru Silme Onayı</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <p>"{{ announcement.title }}" başlıklı duyuruyu silmek istediğinizden emin misiniz?</p>
+                                                        <p class="text-danger">Bu işlem geri alınamaz!</p>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                                                        <form action="{% url 'announcement_delete' announcement.id %}" method="post" style="display: inline;">
+                                                            {% csrf_token %}
+                                                            <button type="submit" class="btn btn-danger">Sil</button>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <p class="text-secondary mb-0">Arşivlenmiş duyuru bulunamadı.</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sayfalama -->
+    {% if announcements.has_other_pages %}
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="Page navigation">
+                <ul class="pagination justify-content-center">
+                    {% if announcements.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ announcements.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for i in announcements.paginator.page_range %}
+                        {% if announcements.number == i %}
+                        <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                        {% elif i > announcements.number|add:'-3' and i < announcements.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?page={{ i }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if announcements.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ announcements.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% else %}
+                    <li class="page-item disabled">
+                        <a class="page-link" href="#" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Duyuru Düzenleme Modal -->
+<div class="modal fade" id="announcementModal" tabindex="-1" role="dialog" aria-labelledby="announcementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="announcementModalLabel">Duyuru Düzenle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="modalContent">
+                    <div class="text-center p-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Yükleniyor...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Tooltips'i etkinleştir
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+        
+        // Select2 için etiketleri yapılandır
+        $('#id_tags').select2({
+            placeholder: 'Etiket seçin...',
+            allowClear: true
+        });
+        
+        // DateRangePicker'ı başlat
+        $('#id_date_range').daterangepicker({
+            locale: {
+                format: 'DD.MM.YYYY',
+                separator: ' - ',
+                applyLabel: 'Uygula',
+                cancelLabel: 'İptal',
+                fromLabel: 'Başlangıç',
+                toLabel: 'Bitiş',
+                customRangeLabel: 'Özel Aralık',
+                weekLabel: 'H',
+                daysOfWeek: ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'],
+                monthNames: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'],
+                firstDay: 1
+            },
+            autoUpdateInput: false,
+            opens: 'left'
+        });
+        
+        $('#id_date_range').on('apply.daterangepicker', function(ev, picker) {
+            $(this).val(picker.startDate.format('DD.MM.YYYY') + ' - ' + picker.endDate.format('DD.MM.YYYY'));
+        });
+
+        $('#id_date_range').on('cancel.daterangepicker', function(ev, picker) {
+            $(this).val('');
+        });
+        
+        // Modal açıldığında form içeriğini yükle
+        $('#announcementModal').on('show.bs.modal', function (e) {
+            var url = $(e.relatedTarget).attr('href');
+            $('#modalContent').load(url, function() {
+                // CKEditor'ü başlat
+                if (typeof CKEDITOR !== 'undefined') {
+                    CKEDITOR.replace('id_content');
+                }
+                
+                // DateTimePicker'ı başlat
+                $('.datetimepicker').datetimepicker({
+                    format: 'DD.MM.YYYY HH:mm',
+                    locale: 'tr',
+                    icons: {
+                        time: "fa fa-clock",
+                        date: "fa fa-calendar",
+                        up: "fa fa-chevron-up",
+                        down: "fa fa-chevron-down",
+                        previous: 'fa fa-chevron-left',
+                        next: 'fa fa-chevron-right',
+                        today: 'fa fa-screenshot',
+                        clear: 'fa fa-trash',
+                        close: 'fa fa-remove'
+                    }
+                });
+                
+                // Select2 için etiketleri yapılandır
+                $('#id_tags').select2({
+                    tags: true,
+                    tokenSeparators: [','],
+                    placeholder: 'Etiket seçin veya yeni ekleyin...',
+                    allowClear: true
+                });
+            });
+        });
+        
+        // Form gönderimi
+        $(document).on('submit', '#announcementForm', function(e) {
+            e.preventDefault();
+            
+            // CKEditor içeriğini güncelle
+            if (typeof CKEDITOR !== 'undefined') {
+                for (instance in CKEDITOR.instances) {
+                    CKEDITOR.instances[instance].updateElement();
+                }
+            }
+            
+            var formData = new FormData(this);
+            
+            $.ajax({
+                url: $(this).attr('action'),
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    $('#announcementModal').modal('hide');
+                    
+                    // Başarılı mesajı göster
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Başarılı!',
+                        text: response.message,
+                        confirmButtonText: 'Tamam'
+                    }).then((result) => {
+                        // Sayfayı yenile
+                        window.location.reload();
+                    });
+                },
+                error: function(xhr) {
+                    var errors = JSON.parse(xhr.responseJSON.errors);
+                    var errorMessage = '';
+                    
+                    // Hata mesajlarını birleştir
+                    $.each(errors, function(field, messages) {
+                        $.each(messages, function(index, message) {
+                            errorMessage += field + ': ' + message + '<br>';
+                        });
+                    });
+                    
+                    // Hata mesajını göster
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Hata!',
+                        html: errorMessage,
+                        confirmButtonText: 'Tamam'
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

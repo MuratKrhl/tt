@@ -1,0 +1,423 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="ant-page-header">
+        <div class="ant-page-header-heading">
+            <div class="ant-page-header-heading-left">
+                <span class="ant-page-header-heading-title">Dashboard</span>
+                <span class="ant-page-header-heading-sub-title">BMW Middleware Portal'a hoş geldiniz</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="ant-row" style="margin-left: -12px; margin-right: -12px; margin-top: 24px;">
+        <!-- Özet Kartları -->
+        <div class="ant-col ant-col-xs-24 ant-col-sm-12 ant-col-md-6" style="padding: 12px;">
+            <div class="ant-card ant-card-bordered">
+                <div class="ant-card-body" style="display: flex; align-items: center;">
+                    <div style="font-size: 48px; color: #1890ff; margin-right: 16px;">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 20px; font-weight: 500;">125</div>
+                        <div style="color: rgba(0, 0, 0, 0.45);">Toplam Sunucu</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ant-col ant-col-xs-24 ant-col-sm-12 ant-col-md-6" style="padding: 12px;">
+            <div class="ant-card ant-card-bordered">
+                <div class="ant-card-body" style="display: flex; align-items: center;">
+                    <div style="font-size: 48px; color: #52c41a; margin-right: 16px;">
+                        <i class="fas fa-cubes"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 20px; font-weight: 500;">348</div>
+                        <div style="color: rgba(0, 0, 0, 0.45);">Toplam Uygulama</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ant-col ant-col-xs-24 ant-col-sm-12 ant-col-md-6" style="padding: 12px;">
+            <div class="ant-card ant-card-bordered">
+                <div class="ant-card-body" style="display: flex; align-items: center;">
+                    <div style="font-size: 48px; color: #fa8c16; margin-right: 16px;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 20px; font-weight: 500;">12</div>
+                        <div style="color: rgba(0, 0, 0, 0.45);">Aktif Uyarılar</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ant-col ant-col-xs-24 ant-col-sm-12 ant-col-md-6" style="padding: 12px;">
+            <div class="ant-card ant-card-bordered">
+                <div class="ant-card-body" style="display: flex; align-items: center;">
+                    <div style="font-size: 48px; color: #f5222d; margin-right: 16px;">
+                        <i class="fas fa-times-circle"></i>
+                    </div>
+                    <div>
+                        <div style="font-size: 20px; font-weight: 500;">3</div>
+                        <div style="color: rgba(0, 0, 0, 0.45);">Kritik Hatalar</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ant-row" style="margin-left: -12px; margin-right: -12px; margin-top: 24px;">
+        <!-- Son Aktiviteler -->
+        <div class="ant-col ant-col-xs-24 ant-col-md-12" style="padding: 12px;">
+            <div class="ant-card ant-card-bordered">
+                <div class="ant-card-head">
+                    <div class="ant-card-head-wrapper">
+                        <div class="ant-card-head-title">Son Aktiviteler</div>
+                    </div>
+                </div>
+                <div class="ant-card-body" style="padding: 0;">
+                    <ul class="ant-list ant-list-split">
+                        <li class="ant-list-item" style="padding: 12px 24px;">
+                            <div class="ant-list-item-meta">
+                                <div class="ant-list-item-meta-avatar" style="margin-right: 16px;">
+                                    <i class="fas fa-check-circle" style="color: #52c41a; font-size: 24px;"></i>
+                                </div>
+                                <div class="ant-list-item-meta-content">
+                                    <h4 class="ant-list-item-meta-title">JBoss Sunucusu Yeniden Başlatıldı</h4>
+                                    <div class="ant-list-item-meta-description">JBOSS-PROD-01 sunucusu başarıyla yeniden başlatıldı.</div>
+                                </div>
+                            </div>
+                            <div class="ant-list-item-extra" style="color: rgba(0, 0, 0, 0.45);">10 dakika önce</div>
+                        </li>
+                        <li class="ant-list-item" style="padding: 12px 24px;">
+                            <div class="ant-list-item-meta">
+                                <div class="ant-list-item-meta-avatar" style="margin-right: 16px;">
+                                    <i class="fas fa-upload" style="color: #1890ff; font-size: 24px;"></i>
+                                </div>
+                                <div class="ant-list-item-meta-content">
+                                    <h4 class="ant-list-item-meta-title">Uygulama Güncellendi</h4>
+                                    <div class="ant-list-item-meta-description">CRM uygulaması v2.5.3 sürümüne güncellendi.</div>
+                                </div>
+                            </div>
+                            <div class="ant-list-item-extra" style="color: rgba(0, 0, 0, 0.45);">1 saat önce</div>
+                        </li>
+                        <li class="ant-list-item" style="padding: 12px 24px;">
+                            <div class="ant-list-item-meta">
+                                <div class="ant-list-item-meta-avatar" style="margin-right: 16px;">
+                                    <i class="fas fa-exclamation-circle" style="color: #fa8c16; font-size: 24px;"></i>
+                                </div>
+                                <div class="ant-list-item-meta-content">
+                                    <h4 class="ant-list-item-meta-title">Disk Alanı Uyarısı</h4>
+                                    <div class="ant-list-item-meta-description">WAS-PROD-02 sunucusunda disk alanı %85'in üzerine çıktı.</div>
+                                </div>
+                            </div>
+                            <div class="ant-list-item-extra" style="color: rgba(0, 0, 0, 0.45);">3 saat önce</div>
+                        </li>
+                        <li class="ant-list-item" style="padding: 12px 24px;">
+                            <div class="ant-list-item-meta">
+                                <div class="ant-list-item-meta-avatar" style="margin-right: 16px;">
+                                    <i class="fas fa-cog" style="color: #722ed1; font-size: 24px;"></i>
+                                </div>
+                                <div class="ant-list-item-meta-content">
+                                    <h4 class="ant-list-item-meta-title">Bakım Tamamlandı</h4>
+                                    <div class="ant-list-item-meta-description">NGINX-PROXY-01 sunucusunda planlı bakım tamamlandı.</div>
+                                </div>
+                            </div>
+                            <div class="ant-list-item-extra" style="color: rgba(0, 0, 0, 0.45);">5 saat önce</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Duyurular -->
+        <div class="ant-col ant-col-xs-24 ant-col-md-12" style="padding: 12px;">
+            <div class="ant-card ant-card-bordered">
+                <div class="ant-card-head">
+                    <div class="ant-card-head-wrapper">
+                        <div class="ant-card-head-title">Duyurular</div>
+                    </div>
+                </div>
+                <div class="ant-card-body" style="padding: 0;">
+                    <ul class="ant-list ant-list-split">
+                        <li class="ant-list-item" style="padding: 12px 24px;">
+                            <div class="ant-list-item-meta">
+                                <div class="ant-list-item-meta-avatar" style="margin-right: 16px;">
+                                    <i class="fas fa-bullhorn" style="color: #1890ff; font-size: 24px;"></i>
+                                </div>
+                                <div class="ant-list-item-meta-content">
+                                    <h4 class="ant-list-item-meta-title">JBoss EAP 7.4 Güncelleme Planı</h4>
+                                    <div class="ant-list-item-meta-description">Tüm JBoss sunucuları 15 Ekim tarihinde EAP 7.4 sürümüne güncellenecektir.</div>
+                                </div>
+                            </div>
+                            <div class="ant-list-item-extra" style="color: rgba(0, 0, 0, 0.45);">2 gün önce</div>
+                        </li>
+                        <li class="ant-list-item" style="padding: 12px 24px;">
+                            <div class="ant-list-item-meta">
+                                <div class="ant-list-item-meta-avatar" style="margin-right: 16px;">
+                                    <i class="fas fa-bullhorn" style="color: #1890ff; font-size: 24px;"></i>
+                                </div>
+                                <div class="ant-list-item-meta-content">
+                                    <h4 class="ant-list-item-meta-title">Nginx Yapılandırma Değişikliği</h4>
+                                    <div class="ant-list-item-meta-description">Nginx sunucularında SSL yapılandırması güncellenecektir.</div>
+                                </div>
+                            </div>
+                            <div class="ant-list-item-extra" style="color: rgba(0, 0, 0, 0.45);">3 gün önce</div>
+                        </li>
+                        <li class="ant-list-item" style="padding: 12px 24px;">
+                            <div class="ant-list-item-meta">
+                                <div class="ant-list-item-meta-avatar" style="margin-right: 16px;">
+                                    <i class="fas fa-bullhorn" style="color: #1890ff; font-size: 24px;"></i>
+                                </div>
+                                <div class="ant-list-item-meta-content">
+                                    <h4 class="ant-list-item-meta-title">Hazelcast Cluster Genişletme</h4>
+                                    <div class="ant-list-item-meta-description">Hazelcast cluster'a 3 yeni node eklenecektir.</div>
+                                </div>
+                            </div>
+                            <div class="ant-list-item-extra" style="color: rgba(0, 0, 0, 0.45);">5 gün önce</div>
+                        </li>
+                        <li class="ant-list-item" style="padding: 12px 24px;">
+                            <div class="ant-list-item-meta">
+                                <div class="ant-list-item-meta-avatar" style="margin-right: 16px;">
+                                    <i class="fas fa-bullhorn" style="color: #1890ff; font-size: 24px;"></i>
+                                </div>
+                                <div class="ant-list-item-meta-content">
+                                    <h4 class="ant-list-item-meta-title">WebSphere Lisans Yenileme</h4>
+                                    <div class="ant-list-item-meta-description">WebSphere lisansları yenilenmiştir.</div>
+                                </div>
+                            </div>
+                            <div class="ant-list-item-extra" style="color: rgba(0, 0, 0, 0.45);">1 hafta önce</div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ant-row" style="margin-left: -12px; margin-right: -12px; margin-top: 24px;">
+        <!-- Hızlı Erişim -->
+        <div class="ant-col ant-col-24" style="padding: 12px;">
+            <div class="ant-card ant-card-bordered">
+                <div class="ant-card-head">
+                    <div class="ant-card-head-wrapper">
+                        <div class="ant-card-head-title">Hızlı Erişim</div>
+                    </div>
+                </div>
+                <div class="ant-card-body">
+                    <div class="ant-row" style="margin: -8px;">
+                        <div class="ant-col ant-col-xs-12 ant-col-sm-8 ant-col-md-6 ant-col-lg-4" style="padding: 8px;">
+                            <a href="#" class="quick-access-card">
+                                <div class="ant-card ant-card-bordered" style="text-align: center; padding: 16px;">
+                                    <div style="font-size: 32px; color: #1890ff;">
+                                        <i class="fas fa-server"></i>
+                                    </div>
+                                    <div style="margin-top: 8px;">Sunucu Yönetimi</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="ant-col ant-col-xs-12 ant-col-sm-8 ant-col-md-6 ant-col-lg-4" style="padding: 8px;">
+                            <a href="#" class="quick-access-card">
+                                <div class="ant-card ant-card-bordered" style="text-align: center; padding: 16px;">
+                                    <div style="font-size: 32px; color: #52c41a;">
+                                        <i class="fas fa-cubes"></i>
+                                    </div>
+                                    <div style="margin-top: 8px;">Uygulama Yönetimi</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="ant-col ant-col-xs-12 ant-col-sm-8 ant-col-md-6 ant-col-lg-4" style="padding: 8px;">
+                            <a href="#" class="quick-access-card">
+                                <div class="ant-card ant-card-bordered" style="text-align: center; padding: 16px;">
+                                    <div style="font-size: 32px; color: #722ed1;">
+                                        <i class="fas fa-database"></i>
+                                    </div>
+                                    <div style="margin-top: 8px;">Datasource Yönetimi</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="ant-col ant-col-xs-12 ant-col-sm-8 ant-col-md-6 ant-col-lg-4" style="padding: 8px;">
+                            <a href="#" class="quick-access-card">
+                                <div class="ant-card ant-card-bordered" style="text-align: center; padding: 16px;">
+                                    <div style="font-size: 32px; color: #fa8c16;">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                    <div style="margin-top: 8px;">Performans İzleme</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="ant-col ant-col-xs-12 ant-col-sm-8 ant-col-md-6 ant-col-lg-4" style="padding: 8px;">
+                            <a href="#" class="quick-access-card">
+                                <div class="ant-card ant-card-bordered" style="text-align: center; padding: 16px;">
+                                    <div style="font-size: 32px; color: #eb2f96;">
+                                        <i class="fas fa-clipboard-list"></i>
+                                    </div>
+                                    <div style="margin-top: 8px;">Kanban Board</div>
+                                </div>
+                            </a>
+                        </div>
+                        <div class="ant-col ant-col-xs-12 ant-col-sm-8 ant-col-md-6 ant-col-lg-4" style="padding: 8px;">
+                            <a href="#" class="quick-access-card">
+                                <div class="ant-card ant-card-bordered" style="text-align: center; padding: 16px;">
+                                    <div style="font-size: 32px; color: #f5222d;">
+                                        <i class="fas fa-tools"></i>
+                                    </div>
+                                    <div style="margin-top: 8px;">Self Servis</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.dashboard-container {
+    padding: 0 0 24px;
+}
+
+.ant-page-header {
+    padding: 16px 0;
+}
+
+.ant-page-header-heading-title {
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 32px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.ant-page-header-heading-sub-title {
+    font-size: 14px;
+    line-height: 1.5;
+    color: rgba(0, 0, 0, 0.45);
+}
+
+.ant-card {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    color: rgba(0, 0, 0, 0.65);
+    font-size: 14px;
+    font-variant: tabular-nums;
+    line-height: 1.5;
+    list-style: none;
+    position: relative;
+    background: #fff;
+    border-radius: 2px;
+    transition: all 0.3s;
+}
+
+.ant-card-bordered {
+    border: 1px solid #e8e8e8;
+}
+
+.ant-card-head {
+    min-height: 48px;
+    margin-bottom: -1px;
+    padding: 0 24px;
+    color: rgba(0, 0, 0, 0.85);
+    font-weight: 500;
+    font-size: 16px;
+    background: transparent;
+    border-bottom: 1px solid #e8e8e8;
+    border-radius: 2px 2px 0 0;
+    zoom: 1;
+}
+
+.ant-card-head-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+.ant-card-head-title {
+    padding: 16px 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.ant-card-body {
+    padding: 24px;
+    zoom: 1;
+}
+
+.ant-list-split .ant-list-item {
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.ant-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+}
+
+.ant-list-item-meta {
+    display: flex;
+    flex: 1;
+    align-items: flex-start;
+}
+
+.ant-list-item-meta-title {
+    margin-bottom: 4px;
+    color: rgba(0, 0, 0, 0.65);
+    font-size: 14px;
+    line-height: 22px;
+}
+
+.ant-list-item-meta-description {
+    color: rgba(0, 0, 0, 0.45);
+    font-size: 14px;
+    line-height: 22px;
+}
+
+.quick-access-card {
+    display: block;
+    text-decoration: none;
+    color: rgba(0, 0, 0, 0.65);
+    transition: all 0.3s;
+}
+
+.quick-access-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.09);
+}
+
+/* Dark theme adjustments */
+body.dark-theme .ant-card {
+    background: #1f1f1f;
+    border-color: #303030;
+}
+
+body.dark-theme .ant-card-head {
+    color: rgba(255, 255, 255, 0.85);
+    border-bottom-color: #303030;
+}
+
+body.dark-theme .ant-list-split .ant-list-item {
+    border-bottom-color: #303030;
+}
+
+body.dark-theme .ant-list-item-meta-title {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+body.dark-theme .ant-list-item-meta-description,
+body.dark-theme .ant-list-item-extra,
+body.dark-theme .ant-page-header-heading-sub-title {
+    color: rgba(255, 255, 255, 0.45);
+}
+
+body.dark-theme .quick-access-card {
+    color: rgba(255, 255, 255, 0.85);
+}
+</style>
+{% endblock %}

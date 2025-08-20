@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Nöbet Listeleri" %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'vendor/datatables/dataTables.bootstrap4.min.css' %}">
+<link rel="stylesheet" href="{% static 'vendor/daterangepicker/daterangepicker.css' %}">
+<link rel="stylesheet" href="{% static 'vendor/select2/select2.min.css' %}">
+<link rel="stylesheet" href="{% static 'nobet_listesi/css/shift_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Başlık ve Butonlar -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{% trans "Nöbet Listeleri" %}</h1>
+        <div>
+            <a href="{% url 'shift_list_export' %}" class="btn btn-secondary btn-sm">
+                <i class="fas fa-file-export fa-sm text-white-50 mr-1"></i> {% trans "Dışa Aktar" %}
+            </a>
+            <a href="{% url 'shift_list_create' %}" class="btn btn-success btn-sm">
+                <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> {% trans "Yeni Nöbet Listesi" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- Filtre Kartı -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Filtreler" %}</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" id="filter-form">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="department">{% trans "Bölüm" %}</label>
+                        {{ filter_form.department }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="date_range">{% trans "Tarih Aralığı" %}</label>
+                        {{ filter_form.date_range }}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="doctor">{% trans "Doktor" %}</label>
+                        {{ filter_form.doctor }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12 text-right">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-search fa-sm"></i> {% trans "Filtrele" %}
+                        </button>
+                        <a href="{% url 'shift_list_view' %}" class="btn btn-secondary">
+                            <i class="fas fa-undo fa-sm"></i> {% trans "Sıfırla" %}
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Nöbet Listeleri Tablosu -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">{% trans "Nöbet Listeleri" %}</h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered" id="shiftListTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Başlık" %}</th>
+                            <th>{% trans "Bölüm" %}</th>
+                            <th>{% trans "Başlangıç" %}</th>
+                            <th>{% trans "Bitiş" %}</th>
+                            <th>{% trans "Nöbet Sayısı" %}</th>
+                            <th>{% trans "Kaynak" %}</th>
+                            <th>{% trans "Oluşturulma" %}</th>
+                            <th>{% trans "İşlemler" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for shift_list in shift_lists %}
+                        <tr>
+                            <td>{{ shift_list.title }}</td>
+                            <td>{{ shift_list.department.name }}</td>
+                            <td>{{ shift_list.start_date|date:"d.m.Y" }}</td>
+                            <td>{{ shift_list.end_date|date:"d.m.Y" }}</td>
+                            <td>{{ shift_list.shift_count }}</td>
+                            <td>
+                                {% if shift_list.source %}
+                                <span class="badge badge-info">{{ shift_list.source.name }}</span>
+                                {% else %}
+                                <span class="badge badge-secondary">{% trans "Manuel" %}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ shift_list.created_at|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'shift_list_detail' shift_list.id %}" class="btn btn-sm btn-info" title="{% trans 'Görüntüle' %}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'shift_list_update' shift_list.id %}" class="btn btn-sm btn-warning" title="{% trans 'Düzenle' %}">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="#" class="btn btn-sm btn-danger delete-shift-list" data-id="{{ shift_list.id }}" title="{% trans 'Sil' %}">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center">{% trans "Nöbet listesi bulunamadı." %}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Sayfalama -->
+            {% if shift_lists.has_other_pages %}
+            <div class="pagination justify-content-center mt-4">
+                <ul class="pagination">
+                    {% if shift_lists.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.doctor %}&doctor={{ request.GET.doctor }}{% endif %}">&laquo; {% trans "İlk" %}</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ shift_lists.previous_page_number }}{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.doctor %}&doctor={{ request.GET.doctor }}{% endif %}">{% trans "Önceki" %}</a>
+                    </li>
+                    {% endif %}
+
+                    {% for i in shift_lists.paginator.page_range %}
+                    {% if shift_lists.number == i %}
+                    <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                    {% elif i > shift_lists.number|add:'-3' and i < shift_lists.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.doctor %}&doctor={{ request.GET.doctor }}{% endif %}">{{ i }}</a>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+
+                    {% if shift_lists.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ shift_lists.next_page_number }}{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.doctor %}&doctor={{ request.GET.doctor }}{% endif %}">{% trans "Sonraki" %}</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ shift_lists.paginator.num_pages }}{% if request.GET.department %}&department={{ request.GET.department }}{% endif %}{% if request.GET.date_range %}&date_range={{ request.GET.date_range }}{% endif %}{% if request.GET.doctor %}&doctor={{ request.GET.doctor }}{% endif %}">{% trans "Son" %} &raquo;</a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Silme Onay Modalı -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">{% trans "Nöbet Listesini Sil" %}</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                {% trans "Bu nöbet listesini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz." %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">{% trans "İptal" %}</button>
+                <a href="#" id="confirmDelete" class="btn btn-danger">{% trans "Sil" %}</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/dataTables.bootstrap4.min.js' %}"></script>
+<script src="{% static 'vendor/daterangepicker/moment.min.js' %}"></script>
+<script src="{% static 'vendor/daterangepicker/daterangepicker.js' %}"></script>
+<script src="{% static 'vendor/select2/select2.min.js' %}"></script>
+<script src="{% static 'vendor/sweetalert2/sweetalert2.all.min.js' %}"></script>
+
+<script>
+    $(document).ready(function() {
+        // DataTables Türkçe dil desteği
+        $('#shiftListTable').DataTable({
+            "language": {
+                "url": "{% static 'vendor/datatables/Turkish.json' %}"
+            },
+            "pageLength": 25,
+            "ordering": true,
+            "paging": false,  // Django pagination kullanıyoruz
+            "info": false    // Django pagination bilgisi yeterli
+        });
+
+        // Select2 inicializasyonu
+        $('.select2').select2({
+            placeholder: "{% trans 'Seçiniz...' %}",
+            allowClear: true
+        });
+
+        // DateRangePicker inicializasyonu
+        $('input[name="date_range"]').daterangepicker({
+            autoUpdateInput: false,
+            locale: {
+                cancelLabel: '{% trans "Temizle" %}',
+                applyLabel: '{% trans "Uygula" %}',
+                fromLabel: '{% trans "Başlangıç" %}',
+                toLabel: '{% trans "Bitiş" %}',
+                customRangeLabel: '{% trans "Özel Aralık" %}',
+                daysOfWeek: ['Pz', 'Pt', 'Sa', 'Ça', 'Pe', 'Cu', 'Ct'],
+                monthNames: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'],
+                firstDay: 1
+            }
+        });
+
+        $('input[name="date_range"]').on('apply.daterangepicker', function(ev, picker) {
+            $(this).val(picker.startDate.format('DD.MM.YYYY') + ' - ' + picker.endDate.format('DD.MM.YYYY'));
+        });
+
+        $('input[name="date_range"]').on('cancel.daterangepicker', function(ev, picker) {
+            $(this).val('');
+        });
+
+        // Silme işlemi
+        $('.delete-shift-list').on('click', function(e) {
+            e.preventDefault();
+            var shiftListId = $(this).data('id');
+            $('#confirmDelete').attr('href', '{% url "shift_list_delete" 0 %}'.replace('0', shiftListId));
+            $('#deleteModal').modal('show');
+        });
+
+        // Silme onayı
+        $('#confirmDelete').on('click', function(e) {
+            e.preventDefault();
+            var deleteUrl = $(this).attr('href');
+            
+            $.ajax({
+                url: deleteUrl,
+                type: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    $('#deleteModal').modal('hide');
+                    Swal.fire({
+                        title: '{% trans "Başarılı!" %}',
+                        text: '{% trans "Nöbet listesi başarıyla silindi." %}',
+                        icon: 'success',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    }).then(function() {
+                        window.location.reload();
+                    });
+                },
+                error: function(xhr, status, error) {
+                    $('#deleteModal').modal('hide');
+                    Swal.fire({
+                        title: '{% trans "Hata!" %}',
+                        text: '{% trans "Nöbet listesi silinirken bir hata oluştu." %}',
+                        icon: 'error',
+                        confirmButtonText: '{% trans "Tamam" %}'
+                    });
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,224 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{% trans "Nöbet Listesi Çözümü - Dashboard" %}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'nobet_listesi/css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Başlık ve Butonlar -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">{% trans "Nöbet Listesi Çözümü" %}</h1>
+        <div>
+            <a href="{% url 'file_upload' %}" class="btn btn-primary btn-sm">
+                <i class="fas fa-upload fa-sm text-white-50 mr-1"></i> {% trans "Dosya Yükle" %}
+            </a>
+            <a href="{% url 'data_source_list' %}" class="btn btn-info btn-sm">
+                <i class="fas fa-database fa-sm text-white-50 mr-1"></i> {% trans "Veri Kaynakları" %}
+            </a>
+            <a href="{% url 'shift_list_create' %}" class="btn btn-success btn-sm">
+                <i class="fas fa-plus fa-sm text-white-50 mr-1"></i> {% trans "Yeni Nöbet Listesi" %}
+            </a>
+        </div>
+    </div>
+
+    <!-- İstatistik Kartları -->
+    <div class="row">
+        <!-- Toplam Nöbet Sayısı -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">{% trans "Toplam Nöbet" %}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_shifts }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aktif Doktor Sayısı -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">{% trans "Aktif Doktor" %}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_doctors }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-md fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aktif Veri Kaynakları -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">{% trans "Aktif Veri Kaynakları" %}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_sources }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-database fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Son Güncelleme -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">{% trans "Son Güncelleme" %}</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                {% if recent_fetch_logs %}{{ recent_fetch_logs.0.started_at|date:"d.m.Y H:i" }}{% else %}-{% endif %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- İçerik Satırı -->
+    <div class="row">
+        <!-- Bölüm İstatistikleri -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Bölümlere Göre Nöbet Dağılımı" %}</h6>
+                </div>
+                <div class="card-body">
+                    {% for stat in department_stats %}
+                    <h4 class="small font-weight-bold">{{ stat.department.name }} <span class="float-right">{{ stat.shift_count }}</span></h4>
+                    <div class="progress mb-4">
+                        <div class="progress-bar bg-info" role="progressbar" style="width: {{ stat.shift_count }}%" aria-valuenow="{{ stat.shift_count }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    {% empty %}
+                    <p class="text-center text-muted">{% trans "Henüz bölüm verisi bulunmamaktadır." %}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Son Eklenen Nöbet Listeleri -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Son Eklenen Nöbet Listeleri" %}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "Başlık" %}</th>
+                                    <th>{% trans "Bölüm" %}</th>
+                                    <th>{% trans "Tarih Aralığı" %}</th>
+                                    <th>{% trans "İşlem" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for shift_list in recent_shift_lists %}
+                                <tr>
+                                    <td>{{ shift_list.title }}</td>
+                                    <td>{{ shift_list.department.name }}</td>
+                                    <td>{{ shift_list.start_date|date:"d.m.Y" }} - {{ shift_list.end_date|date:"d.m.Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'shift_list_detail' shift_list.id %}" class="btn btn-sm btn-info">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center">{% trans "Henüz nöbet listesi bulunmamaktadır." %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'shift_list_view' %}" class="btn btn-primary btn-sm">{% trans "Tüm Nöbet Listelerini Görüntüle" %}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Son Veri Çekme İşlemleri -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">{% trans "Son Veri Çekme İşlemleri" %}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "Kaynak" %}</th>
+                                    <th>{% trans "Durum" %}</th>
+                                    <th>{% trans "Başlangıç" %}</th>
+                                    <th>{% trans "Bitiş" %}</th>
+                                    <th>{% trans "Başlatan" %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in recent_fetch_logs %}
+                                <tr>
+                                    <td>{{ log.source.name }}</td>
+                                    <td>
+                                        {% if log.status == 'success' %}
+                                        <span class="badge badge-success">{% trans "Başarılı" %}</span>
+                                        {% elif log.status == 'processing' %}
+                                        <span class="badge badge-warning">{% trans "İşleniyor" %}</span>
+                                        {% else %}
+                                        <span class="badge badge-danger">{% trans "Başarısız" %}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ log.started_at|date:"d.m.Y H:i:s" }}</td>
+                                    <td>{{ log.completed_at|date:"d.m.Y H:i:s"|default:"-" }}</td>
+                                    <td>{{ log.initiated_by|default:"-" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center">{% trans "Henüz veri çekme işlemi bulunmamaktadır." %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="{% url 'fetch_log_list' %}" class="btn btn-primary btn-sm">{% trans "Tüm Logları Görüntüle" %}</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'nobet_listesi/js/dashboard.js' %}"></script>
+{% endblock %}
