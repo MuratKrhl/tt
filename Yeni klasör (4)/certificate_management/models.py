@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import User
+from django.conf import settings
 
 class CertificateType(models.Model):
     """Sertifika türlerini tanımlar (SSL, TLS, vb.)"""
@@ -38,7 +38,7 @@ class Certificate(models.Model):
     certificate_file = models.FileField(upload_to='certificates/', blank=True, null=True, verbose_name="Sertifika Dosyası")
     private_key_file = models.FileField(upload_to='certificates/private_keys/', blank=True, null=True, verbose_name="Özel Anahtar Dosyası")
     notes = models.TextField(blank=True, null=True, verbose_name="Notlar")
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="created_certificates", verbose_name="Oluşturan")
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="created_certificates", verbose_name="Oluşturan")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Oluşturulma Tarihi")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Güncellenme Tarihi")
     
@@ -89,7 +89,7 @@ class CertificateRenewal(models.Model):
     renewal_date = models.DateField(default=timezone.now, verbose_name="Yenileme Tarihi")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending', verbose_name="Durum")
     notes = models.TextField(blank=True, null=True, verbose_name="Notlar")
-    renewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="certificate_renewals", verbose_name="Yenileyen")
+    renewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="certificate_renewals", verbose_name="Yenileyen")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Oluşturulma Tarihi")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Güncellenme Tarihi")
     
@@ -115,7 +115,7 @@ class CertificateNotification(models.Model):
     sent_to = models.ManyToManyField(User, related_name="certificate_notifications", verbose_name="Alıcılar")
     message = models.TextField(verbose_name="Mesaj")
     acknowledged = models.BooleanField(default=False, verbose_name="Onaylandı")
-    acknowledged_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="acknowledged_notifications", verbose_name="Onaylayan")
+    acknowledged_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="acknowledged_notifications", verbose_name="Onaylayan")
     acknowledged_at = models.DateTimeField(null=True, blank=True, verbose_name="Onaylanma Tarihi")
     
     def __str__(self):
