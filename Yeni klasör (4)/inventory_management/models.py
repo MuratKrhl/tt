@@ -1,5 +1,6 @@
 from django.db import models
-from django.contrib.auth.models import User
+#from django.contrib.auth.models import User
+from django.conf import settings
 
 class Category(models.Model):
     """Envanter kategorisi modeli"""
@@ -49,7 +50,7 @@ class InventoryItem(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='available')
     location = models.CharField(max_length=100, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_items')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_items')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -68,11 +69,11 @@ class InventoryMovement(models.Model):
     movement_type = models.CharField(max_length=20, choices=MOVEMENT_TYPE_CHOICES)
     from_location = models.CharField(max_length=100, blank=True, null=True)
     to_location = models.CharField(max_length=100, blank=True, null=True)
-    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_items')
+    assigned_to = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_items')
     movement_date = models.DateTimeField()
     expected_return_date = models.DateField(blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_movements')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_movements')
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
@@ -97,7 +98,7 @@ class Maintenance(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='scheduled')
     performed_by = models.CharField(max_length=100, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_maintenance')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='created_maintenance')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
